@@ -36,13 +36,18 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
     // Use the floating-point approximation: shift mantissa to top of 256-bit value
     let (mantissa, exp, sign) = (target_f / 2.0_f64.powi(53), 53, 1.0);
     let _ = (mantissa, exp, sign); // unused for now
-    // Easier: split target_f into 4 u64 limbs
+                                   // Easier: split target_f into 4 u64 limbs
     let scaled = target_f / 2.0_f64.powi(192); // upper 64 bits
     let upper = scaled as u64;
     let mid1 = ((target_f - (upper as f64) * 2.0_f64.powi(192)) / 2.0_f64.powi(128)) as u64;
-    let mid2 = ((target_f - (upper as f64) * 2.0_f64.powi(192)) - (mid1 as f64) * 2.0_f64.powi(128)) / 2.0_f64.powi(64);
+    let mid2 = ((target_f - (upper as f64) * 2.0_f64.powi(192))
+        - (mid1 as f64) * 2.0_f64.powi(128))
+        / 2.0_f64.powi(64);
     let mid2 = mid2 as u64;
-    let lower = (target_f - (upper as f64) * 2.0_f64.powi(192) - (mid1 as f64) * 2.0_f64.powi(128) - (mid2 as f64) * 2.0_f64.powi(64)) as u64;
+    let lower = (target_f
+        - (upper as f64) * 2.0_f64.powi(192)
+        - (mid1 as f64) * 2.0_f64.powi(128)
+        - (mid2 as f64) * 2.0_f64.powi(64)) as u64;
     target[0..8].copy_from_slice(&upper.to_be_bytes());
     target[8..16].copy_from_slice(&mid1.to_be_bytes());
     target[16..24].copy_from_slice(&mid2.to_be_bytes());
@@ -62,7 +67,10 @@ pub fn target_to_hex(target: &[u8]) -> String {
 /// # Errors
 /// Returns an error if the hex is malformed or not 64 characters long.
 pub fn parse_target(s: &str) -> Result<[u8; 32], String> {
-    let s = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")).unwrap_or(s);
+    let s = s
+        .strip_prefix("0x")
+        .or_else(|| s.strip_prefix("0X"))
+        .unwrap_or(s);
     if s.len() != 64 {
         return Err(format!("expected 64 hex chars, got {}", s.len()));
     }
