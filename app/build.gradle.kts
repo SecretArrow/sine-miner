@@ -167,7 +167,7 @@ val buildRustCore by tasks.registering(Exec::class) {
     description = "Builds the Rust core library for all Android ABIs via cargo-ndk."
 
     val coreDir = rootProject.layout.projectDirectory.dir("core")
-    val jniLibsDir = project.layout.buildDir.dir("intermediates").dir("rust_jniLibs")
+    val jniLibsDir = project.layout.buildDirectory.dir("intermediates").dir("rust_jniLibs")
     val ndkDir = System.getenv("ANDROID_NDK_HOME")
         ?: System.getenv("ANDROID_NDK_ROOT")
         ?: System.getenv("ANDROID_NDK_PATH")
@@ -225,8 +225,8 @@ android.applicationVariants.configureEach {
     val mergeTask = tasks.register("copyRustCore${variantName.capitalize()}") {
         dependsOn(buildRustCore)
         doFirst {
-            val jniLibsDir = project.layout.buildDir.dir("intermediates/rust_jniLibs").get().asFile
-            val variantJniDir = project.layout.buildDir.dir("intermediates/merged_packaged_jni_libs/${variantName}").get().asFile
+            val jniLibsDir = project.layout.buildDirectory.dir("intermediates/rust_jniLibs").get().asFile
+            val variantJniDir = project.layout.buildDirectory.dir("intermediates/merged_packaged_jni_libs/${variantName}").get().asFile
             if (jniLibsDir.exists()) {
                 jniLibsDir.walkTopDown().filter { it.isFile && it.extension == "so" }.forEach { soFile ->
                     val abiDir = soFile.parentFile?.name ?: "default"

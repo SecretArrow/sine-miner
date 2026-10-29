@@ -63,7 +63,7 @@ thiserror = "1.0"
 
 # JNI (Android only)
 [target.'cfg(target_os = "android")'.dependencies]
-jni = { version = "0.21", optional = true, features = ["invocation", "jni-set-rtld-jni-weak"] }
+jni = { version = "0.21", optional = true, features = ["invocation"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
