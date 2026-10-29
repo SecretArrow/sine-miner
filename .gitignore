@@ -45,7 +45,7 @@ ndk-bundle/
 
 # Logs
 *.log
-logs/
+/logs/
 
 # Gradle
 .gradle/
