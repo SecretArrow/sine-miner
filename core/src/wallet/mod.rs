@@ -69,7 +69,11 @@ impl Wallet {
     ///
     /// # Errors
     /// Returns an error if random generation or key derivation fails.
-    pub fn create(label: &str, word_count: WordCount, config: WalletConfig) -> Result<(Self, Mnemonic), WalletError> {
+    pub fn create(
+        label: &str,
+        word_count: WordCount,
+        config: WalletConfig,
+    ) -> Result<(Self, Mnemonic), WalletError> {
         let mnemonic = Mnemonic::generate(word_count)?;
         let seed = Seed::from_mnemonic(&mnemonic, "")?;
         let keypair = Keypair::from_seed(&seed)?;
@@ -89,7 +93,12 @@ impl Wallet {
     ///
     /// # Errors
     /// Returns an error if the mnemonic is invalid or key derivation fails.
-    pub fn import(label: &str, mnemonic_phrase: &str, passphrase: &str, config: WalletConfig) -> Result<Self, WalletError> {
+    pub fn import(
+        label: &str,
+        mnemonic_phrase: &str,
+        passphrase: &str,
+        config: WalletConfig,
+    ) -> Result<Self, WalletError> {
         let mnemonic = Mnemonic::parse(mnemonic_phrase)?;
         let seed = Seed::from_mnemonic(&mnemonic, passphrase)?;
         let keypair = Keypair::from_seed(&seed)?;
@@ -117,7 +126,8 @@ impl Wallet {
     /// Returns an error if the password is wrong or the blob is malformed.
     pub fn decrypt(encrypted: &EncryptedWallet, password: &str) -> Result<Self, WalletError> {
         let blob = encrypted.open(password)?;
-        let wallet: Self = serde_json::from_slice(&blob).map_err(|e| KeystoreError::Serialize(e.to_string()))?;
+        let wallet: Self =
+            serde_json::from_slice(&blob).map_err(|e| KeystoreError::Serialize(e.to_string()))?;
         Ok(wallet)
     }
 
