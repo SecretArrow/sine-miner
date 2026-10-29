@@ -1,0 +1,94 @@
+[package]
+name = "sineminer-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "SineMiner Rust core — Blocknet Argon2id mining + BIP39 wallet + Stratum client (JNI)"
+authors = ["SecretArrow"]
+repository = "https://github.com/SecretArrow/sine-miner"
+
+[lib]
+name = "sineminer_core"
+crate-type = ["cdylib", "rlib"]
+# cdylib for Android .so, rlib for unit tests on host
+
+[features]
+default = ["android"]
+android = ["dep:jni"]
+
+[dependencies]
+# Crypto (parity seine)
+argon2 = "0.5"
+blake2 = "0.10"
+bs58 = { version = "0.5", features = ["check"] }
+curve25519-dalek = { version = "4.1", features = ["digest", "rand_core"] }
+ed25519-dalek = { version = "2.1", features = ["rand_core", "pkcs8", "alloc", "zeroize"] }
+sha2 = "0.10"
+sha3 = "0.10"
+
+# BIP39 mnemonic
+bip39 = { version = "2.1", features = ["alloc", "rand", "zeroize"] }
+hkdf = "0.12"
+hmac = "0.12"
+
+# Encrypted keystore
+aes-gcm = "0.10"
+pbkdf2 = { version = "0.12", features = ["simple"] }
+
+# Randomness
+rand_core = { version = "0.6", features = ["alloc"] }
+getrandom = { version = "0.2", features = ["js"] }
+zeroize = { version = "1.8", features = ["derive"] }
+
+# Encoding
+hex = "0.4"
+base64 = "0.22"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async + Stratum
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "sync", "macros", "time", "fs"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+bytes = "1"
+futures = "0.3"
+async-trait = "0.1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Errors
+anyhow = "1.0"
+thiserror = "1.0"
+
+# JNI (Android only)
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.21", optional = true, features = ["invocation", "jni-set-rtld-jni-weak"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "test-util"] }
+proptest = "1.5"
+criterion = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+overflow-checks = false
+
+[profile.release.package.argon2]
+opt-level = 3
+
+# Faster CI builds
+[profile.ci]
+inherits = "release"
+lto = false
+codegen-units = 16
+opt-level = 2
+strip = "debuginfo"
+
+[profile.dev]
+opt-level = 1
+debug = 1

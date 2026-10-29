@@ -1,0 +1,58 @@
+# Build
+/build/
+/app/build/
+/core/target/
+**/build/
+*.apk
+*.aab
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.dex
+*.ap_
+local.properties
+
+# Native
+*.so
+!core/src/**/*.rs
+.cargo/
+core/Cargo.lock
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Secrets — NEVER commit these
+*.keystore
+*.jks
+keystore.properties
+secrets.properties
+.env
+*.pem
+*.key
+
+# Rust
+**/*.rs.bk
+
+# Android NDK
+ndk-bundle/
+.cxx/
+
+# GitHub Actions local
+.act.secrets
+
+# Logs
+*.log
+logs/
+
+# Gradle
+.gradle/
+
+# Backup
+*.orig
+*.bak
+
+# OS
+Thumbs.db

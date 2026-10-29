@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App identity -->
+    <string name="app_name">SineMiner</string>
+    <string name="app_tagline">Blocknet miner for Android</string>
+    <string name="app_version">v0.1.0</string>
+
+    <!-- Navigation -->
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_mining">Mining</string>
+    <string name="nav_wallet">Wallet</string>
+    <string name="nav_pool">Pool</string>
+    <string name="nav_logs">Logs</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Dashboard -->
+    <string name="dash_title">Dashboard</string>
+    <string name="dash_subtitle">Mining at a glance</string>
+    <string name="dash_hashrate">Hashrate</string>
+    <string name="dash_total_hashes">Total Hashes</string>
+    <string name="dash_shares">Shares</string>
+    <string name="dash_blocks">Blocks</string>
+    <string name="dash_uptime">Uptime</string>
+    <string name="dash_pool_status">Pool</string>
+    <string name="dash_wallet_balance">Wallet</string>
+    <string name="dash_quick_actions">Quick actions</string>
+    <string name="dash_start_mining">Start mining</string>
+    <string name="dash_stop_mining">Stop mining</string>
+    <string name="dash_open_wallet">Open wallet</string>
+    <string name="dash_no_wallet">No wallet configured</string>
+    <string name="dash_create_wallet">Create wallet</string>
+
+    <!-- Mining -->
+    <string name="mining_title">Mining</string>
+    <string name="mining_subtitle">Argon2id • CPU threads</string>
+    <string name="mining_start">Start</string>
+    <string name="mining_pause">Pause</string>
+    <string name="mining_resume">Resume</string>
+    <string name="mining_stop">Stop</string>
+    <string name="mining_running">Mining</string>
+    <string name="mining_idle">Idle</string>
+    <string name="mining_paused">Paused</string>
+    <string name="mining_threads">Threads</string>
+    <string name="mining_memory">Memory</string>
+    <string name="mining_difficulty">Difficulty</string>
+    <string name="mining_target">Target</string>
+    <string name="mining_job_id">Job ID</string>
+    <string name="mining_height">Height</string>
+    <string name="mining_preset_low">Low (256 MiB)</string>
+    <string name="mining_preset_medium">Medium (1 GiB)</string>
+    <string name="mining_preset_production">Production (2 GiB)</string>
+    <string name="mining_warning_low_memory">Low-memory preset produces invalid shares. Use for testing only.</string>
+    <string name="mining_warning_battery">Mining drains battery and may heat the device. Plug in a charger.</string>
+
+    <!-- Wallet -->
+    <string name="wallet_title">Wallet</string>
+    <string name="wallet_subtitle">Blocknet stealth wallet</string>
+    <string name="wallet_create">Create wallet</string>
+    <string name="wallet_import">Import wallet</string>
+    <string name="wallet_address">Address</string>
+    <string name="wallet_copy_address">Copy address</string>
+    <string name="wallet_show_qr">Show QR</string>
+    <string name="wallet_backup_mnemonic">Backup mnemonic</string>
+    <string name="wallet_label">Label</string>
+    <string name="wallet_password">Password</string>
+    <string name="wallet_password_confirm">Confirm password</string>
+    <string name="wallet_passphrase">BIP39 passphrase (optional)</string>
+    <string name="wallet_mnemonic">Mnemonic phrase</string>
+    <string name="wallet_word_count">Word count</string>
+    <string name="wallet_network">Network</string>
+    <string name="wallet_mainnet">Mainnet</string>
+    <string name="wallet_testnet">Testnet</string>
+    <string name="wallet_create_button">Create</string>
+    <string name="wallet_import_button">Import</string>
+    <string name="wallet_save_button">Save</string>
+    <string name="wallet_delete_button">Delete</string>
+    <string name="wallet_mnemonic_warning">Write down your mnemonic. Anyone with these words controls your wallet. We never store or transmit them.</string>
+    <string name="wallet_mnemonic_copied">Mnemonic copied to clipboard</string>
+    <string name="wallet_address_copied">Address copied to clipboard</string>
+    <string name="wallet_password_mismatch">Passwords do not match</string>
+    <string name="wallet_password_too_short">Password must be at least 8 characters</string>
+    <string name="wallet_invalid_mnemonic">Invalid mnemonic phrase</string>
+    <string name="wallet_no_wallets">No wallets yet</string>
+    <string name="wallet_confirm_delete">Delete wallet?</string>
+    <string name="wallet_confirm_delete_message">This cannot be undone. Make sure you have your mnemonic backed up.</string>
+    <string name="wallet_cancel">Cancel</string>
+    <string name="wallet_delete">Delete</string>
+
+    <!-- Pool -->
+    <string name="pool_title">Pool</string>
+    <string name="pool_subtitle">Stratum server</string>
+    <string name="pool_host">Host</string>
+    <string name="pool_port">Port</string>
+    <string name="pool_worker">Worker</string>
+    <string name="pool_password">Password</string>
+    <string name="pool_default">bntpool.com:3333</string>
+    <string name="pool_save">Save</string>
+    <string name="pool_test">Test connection</string>
+    <string name="pool_connecting">Connecting…</string>
+    <string name="pool_connected">Connected</string>
+    <string name="pool_disconnected">Disconnected</string>
+
+    <!-- Logs -->
+    <string name="logs_title">Logs</string>
+    <string name="logs_subtitle">Mining session log</string>
+    <string name="logs_clear">Clear</string>
+    <string name="logs_share">Share</string>
+    <string name="logs_empty">No log entries yet</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic color (Android 12+)</string>
+    <string name="settings_mining">Mining</string>
+    <string name="settings_threads">Default threads</string>
+    <string name="settings_memory_preset">Default memory preset</string>
+    <string name="settings_auto_start">Auto-start on charge</string>
+    <string name="settings_stop_on_battery">Stop below 20% battery</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notif_mining">Mining updates</string>
+    <string name="settings_notif_shares">Share accepted/rejected</string>
+    <string name="settings_notif_blocks">Block found</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_repo">Source</string>
+    <string name="settings_license">License</string>
+
+    <!-- Notifications -->
+    <string name="notif_channel_mining">Mining</string>
+    <string name="notif_channel_mining_desc">Foreground mining status</string>
+    <string name="notif_channel_shares">Shares</string>
+    <string name="notif_channel_shares_desc">Share accepted or rejected</string>
+    <string name="notif_channel_blocks">Blocks</string>
+    <string name="notif_channel_blocks_desc">A block was found</string>
+    <string name="notif_channel_errors">Errors</string>
+    <string name="notif_channel_errors_desc">Mining failures</string>
+
+    <!-- Common -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_save">Save</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_copy">Copy</string>
+    <string name="common_share">Share</string>
+    <string name="common_close">Close</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_error">Error</string>
+    <string name="common_retry">Retry</string>
+    <string name="common_back">Back</string>
+    <string name="common_done">Done</string>
+    <string name="common_next">Next</string>
+    <string name="common_previous">Previous</string>
+    <string name="common_continue">Continue</string>
+
+    <!-- Errors -->
+    <string name="err_generic">Something went wrong</string>
+    <string name="err_network">Network error</string>
+    <string name="err_pool_login">Pool login rejected</string>
+    <string name="err_wallet_load">Failed to load wallet</string>
+    <string name="err_wallet_save">Failed to save wallet</string>
+    <string name="err_native_lib">Failed to load native library</string>
+</resources>

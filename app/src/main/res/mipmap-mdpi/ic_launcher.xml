@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty placeholder for legacy launcher icons (mipmap-mdpi etc.) -->
+<!-- The actual launcher is the adaptive icon in mipmap-anydpi-v26/. -->
+<!-- This drawable exists so older Android (pre-API 26) has a fallback. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="@color/brand_primary"
+        android:pathData="M24,24 m-22,0 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0" />
+    <path
+        android:strokeColor="@color/surface_dark"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M14,24 C17,15 21,15 24,24 C27,33 31,33 34,24" />
+</vector>

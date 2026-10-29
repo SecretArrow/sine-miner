@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build + publish release APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    env:
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configuration-cache=true"
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Rust toolchain + Android targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android,armv7-linux-androideabi,i686-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked --version ^3
+
+      - name: Cache Cargo + Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            core/target
+            ~/.gradle/caches
+            .gradle
+          key: release-${{ runner.os }}-${{ hashFiles('core/Cargo.toml', 'gradle/libs.versions.toml', '**/*.gradle*') }}
+          restore-keys: |
+            release-${{ runner.os }}-
+            build-${{ runner.os }}-
+
+      - name: Set up Android SDK + NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'ndk;27.0.12077973 platforms;android-35 build-tools;35.0.0'
+
+      - name: Decode signing keystore (if secret present)
+        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "${{ secrets.SINEMINER_KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/sineminer.keystore
+          echo "SINEMINER_KEYSTORE_FILE=$RUNNER_TEMP/sineminer.keystore" >> $GITHUB_ENV
+
+      - name: Build signed release APK + AAB
+        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+          SINEMINER_KEYSTORE_PASSWORD: ${{ secrets.SINEMINER_KEYSTORE_PASSWORD }}
+          SINEMINER_KEY_ALIAS: ${{ secrets.SINEMINER_KEY_ALIAS }}
+          SINEMINER_KEY_PASSWORD: ${{ secrets.SINEMINER_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon --stacktrace
+
+      - name: Build unsigned release APK + AAB (no signing secret)
+        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 == '' }}
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+        run: ./gradlew :app:assembleCi :app:bundleCi --no-daemon --stacktrace
+
+      - name: Determine version
+        id: ver
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.version }}
+          name: SineMiner ${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          files: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/bundle/**/*.aab
+          draft: true
+          prerelease: false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK + AAB as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SineMiner-release-${{ steps.ver.outputs.version }}
+          path: |
+            app/build/outputs/apk/**/*.apk
+            app/build/outputs/bundle/**/*.aab
+          retention-days: 90

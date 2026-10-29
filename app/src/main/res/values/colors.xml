@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand palette -->
+    <color name="brand_primary">#FF00D4AA</color>
+    <color name="brand_primary_dark">#FF00A585</color>
+    <color name="brand_secondary">#FF6F4FFF</color>
+    <color name="brand_accent">#FFFFB547</color>
+    <color name="brand_error">#FFEF4444</color>
+    <color name="brand_warning">#FFF59E0B</color>
+    <color name="brand_success">#FF10B981</color>
+    <color name="brand_info">#FF3B82F6</color>
+
+    <!-- Surfaces (light) -->
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="surface_variant_light">#FFF1F5F9</color>
+    <color name="surface_container_light">#FFE2E8F0</color>
+    <color name="on_surface_light">#FF0F172A</color>
+    <color name="on_surface_variant_light">#FF475569</color>
+    <color name="outline_light">#FFCBD5E1</color>
+    <color name="outline_variant_light">#FFE2E8F0</color>
+
+    <!-- Surfaces (dark) -->
+    <color name="surface_dark">#FF0F172A</color>
+    <color name="surface_variant_dark">#FF1E293B</color>
+    <color name="surface_container_dark">#FF1A2234</color>
+    <color name="on_surface_dark">#FFF1F5F9</color>
+    <color name="on_surface_variant_dark">#FF94A3B8</color>
+    <color name="outline_dark">#FF334155</color>
+    <color name="outline_variant_dark">#FF1E293B</color>
+
+    <!-- Splash -->
+    <color name="splash_background">#FF0F172A</color>
+    <color name="splash_logo">#FF00D4AA</color>
+
+    <!-- Launcher icon background -->
+    <color name="ic_launcher_background">#FF0F172A</color>
+
+    <!-- Misc -->
+    <color name="transparent">#00000000</color>
+    <color name="scrim">#99000000</color>
+</resources>
