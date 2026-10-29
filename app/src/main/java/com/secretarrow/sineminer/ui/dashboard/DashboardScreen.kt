@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -56,6 +57,11 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Pre-compute colors so we can build the StatItem list outside @Composable context.
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
 
     Column(
         modifier = Modifier
@@ -154,10 +160,10 @@ fun DashboardScreen(
         ) {
             items(
                 listOf(
-                    StatItem(Icons.AutoMirrored.Filled.ShowChart, MaterialTheme.colorScheme.primary, "Total Hashes", formatNumber(uiState.totalHashes)),
-                    StatItem(Icons.Filled.CheckCircle, MaterialTheme.colorScheme.tertiary, "Shares", "${uiState.sharesAccepted}/${uiState.sharesRejected}"),
-                    StatItem(Icons.Filled.Bolt, MaterialTheme.colorScheme.primary, "Blocks", uiState.blocksFound.toString()),
-                    StatItem(Icons.Filled.Timer, MaterialTheme.colorScheme.secondary, "Uptime", formatDuration(uiState.uptimeMs)),
+                    StatItem(Icons.AutoMirrored.Filled.ShowChart, primaryColor, "Total Hashes", formatNumber(uiState.totalHashes)),
+                    StatItem(Icons.Filled.CheckCircle, tertiaryColor, "Shares", "${uiState.sharesAccepted}/${uiState.sharesRejected}"),
+                    StatItem(Icons.Filled.Bolt, primaryColor, "Blocks", uiState.blocksFound.toString()),
+                    StatItem(Icons.Filled.Timer, secondaryColor, "Uptime", formatDuration(uiState.uptimeMs)),
                 )
             ) { stat ->
                 StatCard(

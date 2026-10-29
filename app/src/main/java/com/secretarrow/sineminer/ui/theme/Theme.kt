@@ -45,11 +45,9 @@ fun SineMinerTheme(
             val window = (view.context as? Activity)?.window
             if (window != null) {
                 window.statusBarColor = colorScheme.background.toArgb()
-                @Suppress("DEPRECATION")
-                window.decorView.systemBarsVisibility = (
-                    android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    )
+                // On Android 15+ the status bar is always transparent; on older versions
+                // we just leave the icon tint to system defaults. Don't touch systemBarsVisibility
+                // (it's deprecated and inconsistent across API levels).
             }
         }
     }

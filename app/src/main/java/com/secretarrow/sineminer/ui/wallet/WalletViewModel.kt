@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,6 +35,7 @@ class WalletViewModel @Inject constructor(
     val action: StateFlow<WalletAction?> = _action.asStateFlow()
 
     val uiState: StateFlow<WalletUiState> = walletRepo.observeAll()
+        .map { wallets: List<Wallet> -> WalletUiState(wallets = wallets, loading = false) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

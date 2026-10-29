@@ -26,7 +26,8 @@ import javax.inject.Singleton
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    private val manager = context.getSystemService<NotificationManager>()!!
+    /** Visible to same-module callers (e.g. MiningForegroundService). */
+    internal val manager: NotificationManager = context.getSystemService<NotificationManager>()!!
 
     fun ensureChannels() {
         if (manager.getNotificationChannel(CHANNEL_MINING) == null) {

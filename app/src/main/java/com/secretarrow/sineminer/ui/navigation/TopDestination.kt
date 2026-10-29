@@ -40,8 +40,8 @@ enum class TopDestination(
     POOL(
         route = "pool",
         labelRes = com.secretarrow.sineminer.R.string.nav_pool,
-        icon = Icons.Filled.CloudQueue,
-        iconSelected = Icons.Filled.CloudQueue,
+        icon = Icons.Filled.Cloud,
+        iconSelected = Icons.Filled.Cloud,
     ),
     LOGS(
         route = "logs",
@@ -59,13 +59,13 @@ enum class TopDestination(
 
     companion object {
         val START: TopDestination = DASHBOARD
-
-        /** Routes for nested screens (e.g. wallet create/import). */
-        object Routes {
-            const val WALLET_CREATE = "wallet/create"
-            const val WALLET_IMPORT = "wallet/import"
-            const val WALLET_DETAIL = "wallet/detail"
-            const val WALLET_BACKUP = "wallet/backup"
-        }
     }
+}
+
+/** Routes for nested screens (e.g. wallet create/import). */
+object SineMinerRoutes {
+    const val WALLET_CREATE = "wallet/create"
+    const val WALLET_IMPORT = "wallet/import"
+    const val WALLET_DETAIL = "wallet/detail"
+    const val WALLET_BACKUP = "wallet/backup"
 }

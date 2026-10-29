@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -31,6 +32,14 @@ class PoolViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(PoolUiState())
     val uiState: StateFlow<PoolUiState> = settingsRepo.poolConfig
+        .map { cfg: PoolConfig ->
+            PoolUiState(
+                host = cfg.host,
+                port = cfg.port,
+                worker = cfg.worker,
+                password = cfg.password,
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

@@ -23,7 +23,6 @@ import com.secretarrow.sineminer.ui.settings.SettingsScreen
 import com.secretarrow.sineminer.ui.wallet.CreateWalletScreen
 import com.secretarrow.sineminer.ui.wallet.ImportWalletScreen
 import com.secretarrow.sineminer.ui.wallet.WalletScreen
-
 /**
  * SineMiner navigation graph.
  *
@@ -53,8 +52,8 @@ fun SineMinerNavGraph(
         }
         composable(TopDestination.WALLET.route) {
             WalletScreen(
-                onCreateWallet = { navController.navigate(TopDestination.Routes.WALLET_CREATE) },
-                onImportWallet = { navController.navigate(TopDestination.Routes.WALLET_IMPORT) },
+                onCreateWallet = { navController.navigate(SineMinerRoutes.WALLET_CREATE) },
+                onImportWallet = { navController.navigate(SineMinerRoutes.WALLET_IMPORT) },
             )
         }
         composable(TopDestination.POOL.route) {
@@ -69,7 +68,7 @@ fun SineMinerNavGraph(
 
         // Nested wallet screens
         composable(
-            route = TopDestination.Routes.WALLET_CREATE,
+            route = SineMinerRoutes.WALLET_CREATE,
             enterTransition = { slideInHorizontally(tween(220)) { it } + fadeIn(tween(220)) },
             exitTransition = { fadeOut(tween(180)) },
             popEnterTransition = { fadeIn(tween(220)) },
@@ -78,7 +77,7 @@ fun SineMinerNavGraph(
             CreateWalletScreen(onBack = { navController.popBackStack() })
         }
         composable(
-            route = TopDestination.Routes.WALLET_IMPORT,
+            route = SineMinerRoutes.WALLET_IMPORT,
             enterTransition = { slideInHorizontally(tween(220)) { it } + fadeIn(tween(220)) },
             exitTransition = { fadeOut(tween(180)) },
             popEnterTransition = { fadeIn(tween(220)) },
