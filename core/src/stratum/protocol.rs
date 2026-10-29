@@ -126,7 +126,10 @@ pub enum PoolNotification {
     /// Pool found a block, switch work.
     PoolBlockSolved,
     /// Difficulty update.
-    DifficultyUpdate { new_difficulty: f64, new_target_hex: String },
+    DifficultyUpdate {
+        new_difficulty: f64,
+        new_target_hex: String,
+    },
     /// Share was accepted.
     ShareAccepted,
     /// Share was rejected.
