@@ -78,19 +78,19 @@ jobs:
           fi
 
       - name: Build Rust core for all ABIs (cargo-ndk → app/src/main/jniLibs/)
+        working-directory: core
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
         run: |
-          mkdir -p app/src/main/jniLibs/arm64-v8a app/src/main/jniLibs/x86_64
+          mkdir -p ../app/src/main/jniLibs/arm64-v8a ../app/src/main/jniLibs/x86_64
           for abi_target in "aarch64-linux-android:arm64-v8a" "x86_64-linux-android:x86_64"; do
             target="${abi_target%%:*}"
             abi="${abi_target##*:}"
             echo "Building Rust core for $abi ($target)…"
-            cargo ndk -t "$target" -o "app/src/main/jniLibs/$abi" -- \
-              build --manifest-path core/Cargo.toml --release
+            cargo ndk -t "$target" -o "../app/src/main/jniLibs/$abi" -- build --release
           done
-          ls -la app/src/main/jniLibs/*/
+          ls -la ../app/src/main/jniLibs/*/
 
       - name: Assemble signed release APK + AAB (when keystore present)
         env:
