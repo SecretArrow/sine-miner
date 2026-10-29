@@ -1,11 +1,9 @@
-import com.android.build.gradle.internal.api.BaseVariantOutputImpl
-import org.gradle.api.tasks.Exec
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 // =============================================================================
 // SineMiner Android app module.
-// Builds the Rust core via cargo-ndk (called from a custom Exec task), then
-// links the resulting .so files into the APK via jniLibs.
+// Rust core is built by CI (build.yml) via cargo-ndk into
+// app/src/main/jniLibs/<abi>/, which AGP picks up automatically.
 // =============================================================================
 
 plugins {
@@ -154,95 +152,12 @@ android {
 }
 
 // =============================================================================
-// Rust core build task — cross-compiles via cargo-ndk into jniLibs.
+// Rust core — built by CI (build.yml) via cargo-ndk into app/src/main/jniLibs/<abi>/
+// AGP picks up that directory automatically. No Gradle task here — keeps the
+// build script simple and lets the Kotlin DSL avoid Gradle Property API quirks.
 // =============================================================================
-
-val rustTargets = mapOf(
-    "arm64-v8a" to "aarch64-linux-android",
-    "x86_64" to "x86_64-linux-android",
-)
-
-val buildRustCore by tasks.registering(Exec::class) {
-    group = "rust"
-    description = "Builds the Rust core library for all Android ABIs via cargo-ndk."
-
-    val coreDir = rootProject.layout.projectDirectory.dir("core")
-    val jniLibsDir = project.layout.buildDirectory.dir("intermediates").dir("rust_jniLibs")
-    val ndkDir = System.getenv("ANDROID_NDK_HOME")
-        ?: System.getenv("ANDROID_NDK_ROOT")
-        ?: System.getenv("ANDROID_NDK_PATH")
-        ?: providers.exec {
-            commandLine("bash", "-c", "echo ${System.getProperty("user.home")}/Android/Sdk/ndk/24.0.8215888")
-        }.standardOutput.asText.get().trim()
-
-    val cargoNdk = providers.exec {
-        commandLine("bash", "-c", "which cargo-ndk 2>/dev/null || echo cargo-ndk")
-    }.standardOutput.asText.get().trim()
-
-    val cargoHome = System.getenv("CARGO_HOME") ?: "${System.getProperty("user.home")}/.cargo"
-
-    // Inputs: all Rust sources
-    inputs.dir(coreDir)
-    // Outputs: per-ABI .so files
-    outputs.dir(jniLibsDir)
-
-    doFirst {
-        val cargoNdkExe = if (cargoNdk == "cargo-ndk") "cargo" else cargoNdk
-        // cargo-ndk prefixes cargo, so the actual command is `cargo ndk -t <target> -o <dir> -- build`
-        // We loop per-ABI because cargo-ndk wants a single target per invocation usually.
-        rustTargets.forEach { (abi, target) ->
-            val outDir = jniLibsDir.get().dir(abi).asFile
-            outDir.mkdirs()
-            logger.lifecycle("Building Rust core for $abi ($target)…")
-            val cmd = listOfNotNull(
-                "cargo", "ndk",
-                "-t", target,
-                "-o", outDir.absolutePath,
-                "--",
-                "build",
-                "--manifest-path", coreDir.file("Cargo.toml").asFile.absolutePath,
-                "--release",
-                if (System.getenv("CI") != null) "--profile" else null,
-                if (System.getenv("CI") != null) "ci" else null,
-            )
-            exec {
-                commandLine = cmd.filterNotNull()
-                workingDir = coreDir.asFile
-                environment("ANDROID_NDK_HOME", ndkDir)
-                environment("PATH", "$cargoHome/bin:${System.getenv("PATH")}")
-                environment("CARGO_HOME", cargoHome)
-            }
-        }
-    }
-
-    commandLine = listOf("bash", "-c", "true") // placeholder; the real work is in doFirst
-    isIgnoreExitValue = false
-}
-
-android.applicationVariants.configureEach {
-    // Merge Rust .so files into the variant's jniLibs
-    val variantName = name
-    val mergeTask = tasks.register("copyRustCore${variantName.capitalize()}") {
-        dependsOn(buildRustCore)
-        doFirst {
-            val jniLibsDir = project.layout.buildDirectory.dir("intermediates/rust_jniLibs").get().asFile
-            val variantJniDir = project.layout.buildDirectory.dir("intermediates/merged_packaged_jni_libs/${variantName}").get().asFile
-            if (jniLibsDir.exists()) {
-                jniLibsDir.walkTopDown().filter { it.isFile && it.extension == "so" }.forEach { soFile ->
-                    val abiDir = soFile.parentFile?.name ?: "default"
-                    val target = File(variantJniDir, abiDir)
-                    target.mkdirs()
-                    soFile.copyTo(File(target, soFile.name), overwrite = true)
-                    logger.lifecycle("Copied ${soFile.name} for $abiDir")
-                }
-            }
-        }
-    }
-    // Run before the JNI packaging task
-    tasks.matching { it.name.startsWith("merge${variantName.capitalize()}JniLibFolders") }.configureEach {
-        dependsOn(mergeTask)
-    }
-}
+// To build locally, run: scripts/build-rust.sh
+// (Requires Rust + cargo-ndk + Android NDK.)
 
 // =============================================================================
 // Dependencies

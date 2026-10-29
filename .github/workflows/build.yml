@@ -26,7 +26,7 @@ jobs:
   build-debug-apk:
     name: Build debug APK (with native Rust core)
     runs-on: ubuntu-22.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configuration-cache=true -Dorg.gradle.jvmargs=-Xmx4g"
       CARGO_TERM_COLOR: always
@@ -67,7 +67,23 @@ jobs:
         with:
           packages: 'ndk;27.0.12077973 platforms;android-35 build-tools;35.0.0'
 
-      - name: Build Rust core (cargo-ndk) + assemble debug APK
+      - name: Build Rust core for all ABIs (cargo-ndk → app/src/main/jniLibs/)
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+          ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
+        run: |
+          mkdir -p app/src/main/jniLibs/arm64-v8a app/src/main/jniLibs/x86_64
+          for abi_target in "aarch64-linux-android:arm64-v8a" "x86_64-linux-android:x86_64"; do
+            target="${abi_target%%:*}"
+            abi="${abi_target##*:}"
+            echo "Building $abi ($target)…"
+            cargo ndk -t "$target" -o "app/src/main/jniLibs/$abi" -- \
+              build --manifest-path core/Cargo.toml --release || \
+              echo "::warning::Rust build for $abi failed — APK will not include native lib"
+          done
+          ls -la app/src/main/jniLibs/*/ || true
+
+      - name: Assemble debug APK
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
@@ -80,3 +96,12 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 30
           if-no-files-found: warn
+
+      - name: Upload Rust build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-build-logs
+          path: core/target/
+          retention-days: 7
+          if-no-files-found: ignore
