@@ -14,8 +14,8 @@
 //! AEAD provides confidentiality + integrity; PBKDF2-HMAC-SHA256 with high
 //! iterations protects against brute force on the password.
 
-use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use aes_gcm::aead::Aead;
+use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
 use base64::Engine;
 use pbkdf2::pbkdf2_hmac;
 use rand_core::OsRng;
@@ -75,7 +75,8 @@ impl EncryptedWallet {
         let mut key = [0u8; KEY_LEN];
         pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, iterations, &mut key);
 
-        let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| KeystoreError::EncryptionFailed(e.to_string()))?;
+        let cipher = Aes256Gcm::new_from_slice(&key)
+            .map_err(|e| KeystoreError::EncryptionFailed(e.to_string()))?;
         let nonce = Nonce::from_slice(&nonce_bytes);
         let ciphertext = cipher
             .encrypt(nonce, plaintext)
@@ -116,9 +117,12 @@ impl EncryptedWallet {
 
         let mut key = [0u8; KEY_LEN];
         pbkdf2_hmac::<Sha256>(password.as_bytes(), &salt, self.iterations, &mut key);
-        let cipher = Aes256Gcm::new_from_slice(&key).map_err(|_| KeystoreError::DecryptionFailed)?;
+        let cipher =
+            Aes256Gcm::new_from_slice(&key).map_err(|_| KeystoreError::DecryptionFailed)?;
         let nonce = Nonce::from_slice(&nonce_bytes);
-        let plaintext = cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| KeystoreError::DecryptionFailed)?;
+        let plaintext = cipher
+            .decrypt(nonce, ciphertext.as_ref())
+            .map_err(|_| KeystoreError::DecryptionFailed)?;
         key.zeroize();
         Ok(plaintext)
     }
@@ -168,8 +172,12 @@ mod tests {
         let plaintext = b"secret wallet data".to_vec();
         let mut enc = EncryptedWallet::seal(&plaintext, "pwd", 1000).unwrap();
         // Flip a bit in the ciphertext
-        let mut ct = base64::engine::general_purpose::STANDARD.decode(&enc.ciphertext).unwrap();
-        if let Some(b) = ct.last_mut() { *b ^= 0xFF; }
+        let mut ct = base64::engine::general_purpose::STANDARD
+            .decode(&enc.ciphertext)
+            .unwrap();
+        if let Some(b) = ct.last_mut() {
+            *b ^= 0xFF;
+        }
         enc.ciphertext = base64::engine::general_purpose::STANDARD.encode(&ct);
         assert!(enc.open("pwd").is_err());
     }
