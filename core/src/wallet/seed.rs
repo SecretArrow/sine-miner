@@ -36,7 +36,9 @@ impl Seed {
 
     /// Get the raw 64-byte seed.
     #[must_use]
-    pub fn as_bytes(&self) -> &[u8; 64] { &self.0 }
+    pub fn as_bytes(&self) -> &[u8; 64] {
+        &self.0
+    }
 
     /// Get the first 32 bytes (commonly used as ed25519 seed).
     #[must_use]
@@ -61,8 +63,8 @@ impl Drop for Seed {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::mnemonic::WordCount;
+    use super::*;
 
     #[test]
     fn seed_is_deterministic_for_same_mnemonic() {

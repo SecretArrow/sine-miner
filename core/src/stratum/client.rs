@@ -13,7 +13,7 @@ use std::time::Duration;
 use anyhow::Context;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{mpsc, Mutex};
 use tokio::time;
 
 use super::capabilities::ClientCapabilities;
@@ -44,7 +44,13 @@ pub struct StratumClient {
 impl StratumClient {
     /// Create a new client. Use `start()` to launch the connection task.
     #[must_use]
-    pub fn new(config: StratumConfig) -> (Self, mpsc::UnboundedReceiver<PoolNotification>, mpsc::UnboundedSender<SubmitRequest>) {
+    pub fn new(
+        config: StratumConfig,
+    ) -> (
+        Self,
+        mpsc::UnboundedReceiver<PoolNotification>,
+        mpsc::UnboundedSender<SubmitRequest>,
+    ) {
         let (notify_tx, notify_rx) = mpsc::unbounded_channel();
         let (submit_tx, submit_rx) = mpsc::unbounded_channel();
         let client = Self {
@@ -138,7 +144,8 @@ async fn connect_and_run(
     // Read login response
     let mut line = String::new();
     reader.read_line(&mut line).await?;
-    let resp: LoginResponse = serde_json::from_str(&line).map_err(|e| StratumError::Json(e.to_string()))?;
+    let resp: LoginResponse =
+        serde_json::from_str(&line).map_err(|e| StratumError::Json(e.to_string()))?;
     if let Some(err) = resp.error {
         return Err(anyhow::anyhow!(StratumError::LoginRejected(err.message)));
     }
@@ -176,7 +183,10 @@ async fn connect_and_run(
     }
 }
 
-fn handle_pool_message(line: &str, notify_tx: &mpsc::UnboundedSender<PoolNotification>) -> Result<(), String> {
+fn handle_pool_message(
+    line: &str,
+    notify_tx: &mpsc::UnboundedSender<PoolNotification>,
+) -> Result<(), String> {
     if line.is_empty() {
         return Ok(());
     }
@@ -186,7 +196,8 @@ fn handle_pool_message(line: &str, notify_tx: &mpsc::UnboundedSender<PoolNotific
     if let Some(method) = value.get("method").and_then(|v| v.as_str()) {
         match method {
             "mining.notify" => {
-                let notify: NotifyMessage = serde_json::from_value(value).map_err(|e| e.to_string())?;
+                let notify: NotifyMessage =
+                    serde_json::from_value(value).map_err(|e| e.to_string())?;
                 let _ = notify_tx.send(PoolNotification::Notify {
                     job_id: notify.params.job_id,
                     header_base_hex: notify.params.header_base,
@@ -195,7 +206,11 @@ fn handle_pool_message(line: &str, notify_tx: &mpsc::UnboundedSender<PoolNotific
                 });
             }
             "mining.set_difficulty" => {
-                if let Some(diff) = value.get("params").and_then(|p| p.get(0)).and_then(|v| v.as_f64()) {
+                if let Some(diff) = value
+                    .get("params")
+                    .and_then(|p| p.get(0))
+                    .and_then(|v| v.as_f64())
+                {
                     let _ = notify_tx.send(PoolNotification::DifficultyUpdate {
                         new_difficulty: diff,
                         new_target_hex: super::super::mining::target::target_to_hex(
@@ -218,7 +233,11 @@ fn handle_pool_message(line: &str, notify_tx: &mpsc::UnboundedSender<PoolNotific
     if let Some(result) = value.get("result") {
         if let Some(err) = value.get("error") {
             if !err.is_null() {
-                let reason = err.get(1).and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+                let reason = err
+                    .get(1)
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
                 let _ = notify_tx.send(PoolNotification::ShareRejected { reason });
                 return Ok(());
             }

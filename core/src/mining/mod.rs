@@ -12,8 +12,8 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use argon2::{Algorithm, Argon2, Params, Version};
-use tokio::sync::Mutex;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 
 use crate::util::hex;
 
@@ -82,13 +82,19 @@ impl MiningConfig {
     /// Lower-memory preset for low-end Android devices. Produces invalid blocks (testing only).
     #[must_use]
     pub fn low_memory() -> Self {
-        Self { memory_kib: 256 * 1024, ..Self::default() }
+        Self {
+            memory_kib: 256 * 1024,
+            ..Self::default()
+        }
     }
 
     /// 1 GiB preset. Will still be rejected by pools but won't OOM most flagship phones.
     #[must_use]
     pub fn medium_memory() -> Self {
-        Self { memory_kib: 1024 * 1024, ..Self::default() }
+        Self {
+            memory_kib: 1024 * 1024,
+            ..Self::default()
+        }
     }
 
     /// Production preset — full 2 GiB Argon2id. Only suitable for phones with ≥ 6 GiB free RAM.
@@ -106,9 +112,17 @@ pub enum MiningEvent {
     /// A nonce was tried. (Useful for debugging, throttled in production.)
     HashAttempt { thread_id: u32, nonce: u64 },
     /// Periodic hashrate update.
-    Hashrate { thread_id: u32, hashes_per_sec: f64, total_hashes: u64 },
+    Hashrate {
+        thread_id: u32,
+        hashes_per_sec: f64,
+        total_hashes: u64,
+    },
     /// A share that meets the pool target was found.
-    ShareFound { thread_id: u32, nonce: u64, hash_hex: String },
+    ShareFound {
+        thread_id: u32,
+        nonce: u64,
+        hash_hex: String,
+    },
     /// Engine stopped (clean or with error).
     Stopped { thread_id: u32, reason: String },
     /// Background thread panicked.
@@ -152,8 +166,13 @@ impl MiningEngine {
     /// # Errors
     /// Returns an error if Argon2id parameters are out of bounds.
     pub fn new(config: MiningConfig) -> Result<Self> {
-        let params = Params::new(config.memory_kib, config.iterations, config.parallelism, Some(POW_OUTPUT_LEN))
-            .context("invalid Argon2id parameters")?;
+        let params = Params::new(
+            config.memory_kib,
+            config.iterations,
+            config.parallelism,
+            Some(POW_OUTPUT_LEN),
+        )
+        .context("invalid Argon2id parameters")?;
         let argon = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
         Ok(Self { config, argon })
     }
@@ -227,7 +246,10 @@ impl MiningEngine {
                 let mut last_flush = Instant::now();
                 let batch = engine_self.config.batch_size;
 
-                let _ = event_tx.send(MiningEvent::Started { thread_id, work_id: 0 });
+                let _ = event_tx.send(MiningEvent::Started {
+                    thread_id,
+                    work_id: 0,
+                });
 
                 loop {
                     if stop.load(std::sync::atomic::Ordering::Relaxed) {
@@ -308,5 +330,7 @@ impl MiningEngine {
 
     /// Get the current configuration.
     #[must_use]
-    pub fn config(&self) -> &MiningConfig { &self.config }
+    pub fn config(&self) -> &MiningConfig {
+        &self.config
+    }
 }
