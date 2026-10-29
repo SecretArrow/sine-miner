@@ -57,3 +57,12 @@
 -dontwarn org.slf4j.**
 -dontwarn org.bouncycastle.**
 -dontwarn javax.naming.**
+
+# --- Tink (pulled in by androidx.security.crypto) references errorprone
+#     annotations that aren't in the runtime classpath. R8 by default treats
+#     these as errors; suppress the warnings so the release minify step can
+#     complete.
+-dontwarn com.google.errorprone.annotations.**
+
+# --- kotlinx.serialization may reference classes via reflection ---
+-dontwarn kotlinx.serialization.**
