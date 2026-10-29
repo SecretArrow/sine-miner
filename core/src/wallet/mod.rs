@@ -21,7 +21,7 @@ pub use mnemonic::{Mnemonic, MnemonicError, WordCount};
 pub use seed::Seed;
 
 /// Wallet configuration.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct WalletConfig {
     /// Encryption iterations for the keystore PBKDF2.
     pub pbkdf2_iterations: u32,

@@ -67,12 +67,13 @@ impl Mnemonic {
     /// # Errors
     /// Returns an error if random generation fails.
     pub fn generate(word_count: WordCount) -> Result<Self, MnemonicError> {
-        let bits = match word_count {
-            WordCount::Words12 => bip39::MnemonicType::Words12,
-            WordCount::Words15 => bip39::MnemonicType::Words15,
-            WordCount::Words18 => bip39::MnemonicType::Words18,
-            WordCount::Words21 => bip39::MnemonicType::Words21,
-            WordCount::Words24 => bip39::MnemonicType::Words24,
+        // bip39 2.x: `generate` takes a usize directly (MnemonicType was removed).
+        let bits: usize = match word_count {
+            WordCount::Words12 => 12,
+            WordCount::Words15 => 15,
+            WordCount::Words18 => 18,
+            WordCount::Words21 => 21,
+            WordCount::Words24 => 24,
         };
         let inner = bip39::Mnemonic::generate(bits)
             .map_err(|e| MnemonicError::Internal(e.to_string()))?;

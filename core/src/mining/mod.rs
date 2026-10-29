@@ -202,7 +202,7 @@ impl MiningEngine {
     /// is dropped or a stop signal is sent.
     pub fn spawn_workers(
         self,
-        work_rx: mpsc::Receiver<Arc<Mutex<WorkAssignment>>>,
+        work_rx: Arc<Mutex<mpsc::Receiver<Arc<Mutex<WorkAssignment>>>>>,
         event_tx: mpsc::UnboundedSender<MiningEvent>,
         stop: Arc<std::sync::atomic::AtomicBool>,
     ) -> Vec<tokio::task::JoinHandle<()>> {
@@ -210,7 +210,7 @@ impl MiningEngine {
         let mut handles = Vec::with_capacity(threads as usize);
 
         for thread_id in 0..threads {
-            let mut work_rx = work_rx; // move into task
+            let work_rx = Arc::clone(&work_rx);
             let event_tx = event_tx.clone();
             let stop = Arc::clone(&stop);
             let engine_self = self.clone_for_thread();
@@ -222,12 +222,10 @@ impl MiningEngine {
                     work_id: 0,
                 });
 
-                let mut scheduler = NonceScheduler::new(nonce_seed);
+                let scheduler = NonceScheduler::new(nonce_seed);
                 let mut hashrate = HashrateTracker::new(thread_id);
                 let mut last_flush = Instant::now();
                 let batch = engine_self.config.batch_size;
-
-                let _ = event_tx.send(MiningEvent::Started { thread_id, work_id: 0 });
 
                 loop {
                     if stop.load(std::sync::atomic::Ordering::Relaxed) {
@@ -238,15 +236,18 @@ impl MiningEngine {
                         return;
                     }
 
-                    let work_opt = work_rx.recv().await;
-                    let work = match work_opt {
-                        Some(w) => w,
-                        None => {
-                            let _ = event_tx.send(MiningEvent::Stopped {
-                                thread_id,
-                                reason: "work channel closed".into(),
-                            });
-                            return;
+                    // Lock the shared receiver just long enough to take one work item.
+                    let work = {
+                        let mut guard = work_rx.lock().await;
+                        match guard.recv().await {
+                            Some(w) => w,
+                            None => {
+                                let _ = event_tx.send(MiningEvent::Stopped {
+                                    thread_id,
+                                    reason: "work channel closed".into(),
+                                });
+                                return;
+                            }
                         }
                     };
                     let work = work.lock().await;
