@@ -35,13 +35,13 @@ enum class TopDestination(
         route = "wallet",
         labelRes = com.secretarrow.sineminer.R.string.nav_wallet,
         icon = Icons.Outlined.AccountBalanceWallet,
-        iconSelected = Icons.Filled.AccountBalanceWallet,
+        iconSelected = Icons.Outlined.AccountBalanceWallet,
     ),
     POOL(
         route = "pool",
         labelRes = com.secretarrow.sineminer.R.string.nav_pool,
-        icon = Icons.Filled.Cloud,
-        iconSelected = Icons.Filled.Cloud,
+        icon = Icons.Filled.Apps,
+        iconSelected = Icons.Filled.Apps,
     ),
     LOGS(
         route = "logs",
