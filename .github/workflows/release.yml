@@ -2,8 +2,6 @@ name: Release
 
 on:
   push:
-    branches:
-      - 'IGNORE-BRANCH-FILTER-DOES-NOT-MATCH'  # workaround: GitHub Actions quirks
     tags:
       - 'v*'
   workflow_dispatch:
@@ -20,12 +18,15 @@ jobs:
   release:
     name: Build + publish release APK
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
-    # Only actually run if this is a real tag push or a manual dispatch.
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 50
     env:
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configuration-cache=true"
       CARGO_TERM_COLOR: always
+      # Pass secrets as env vars (always set; the build script checks for them).
+      SINEMINER_KEYSTORE_BASE64: ${{ secrets.SINEMINER_KEYSTORE_BASE64 }}
+      SINEMINER_KEYSTORE_PASSWORD: ${{ secrets.SINEMINER_KEYSTORE_PASSWORD }}
+      SINEMINER_KEY_ALIAS: ${{ secrets.SINEMINER_KEY_ALIAS }}
+      SINEMINER_KEY_PASSWORD: ${{ secrets.SINEMINER_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,35 +66,51 @@ jobs:
           packages: 'ndk;27.0.12077973 platforms;android-35 build-tools;35.0.0'
 
       - name: Decode signing keystore (if secret present)
-        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 != '' }}
+        env:
+          SINEMINER_KEYSTORE_BASE64: ${{ secrets.SINEMINER_KEYSTORE_BASE64 }}
         run: |
-          echo "${{ secrets.SINEMINER_KEYSTORE_BASE64 }}" | base64 -d > $RUNNER_TEMP/sineminer.keystore
-          echo "SINEMINER_KEYSTORE_FILE=$RUNNER_TEMP/sineminer.keystore" >> $GITHUB_ENV
+          if [ -n "$SINEMINER_KEYSTORE_BASE64" ]; then
+            echo "$SINEMINER_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/sineminer.keystore"
+            echo "SINEMINER_KEYSTORE_FILE=$RUNNER_TEMP/sineminer.keystore" >> "$GITHUB_ENV"
+            echo "✓ Keystore decoded"
+          else
+            echo "::warning::No release keystore secret — release APK will be unsigned (debug-signed fallback)"
+          fi
 
-      - name: Build signed release APK + AAB
-        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 != '' }}
+      - name: Build Rust core for all ABIs (cargo-ndk → app/src/main/jniLibs/)
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
-          SINEMINER_KEYSTORE_PASSWORD: ${{ secrets.SINEMINER_KEYSTORE_PASSWORD }}
-          SINEMINER_KEY_ALIAS: ${{ secrets.SINEMINER_KEY_ALIAS }}
-          SINEMINER_KEY_PASSWORD: ${{ secrets.SINEMINER_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon --stacktrace
+        run: |
+          mkdir -p app/src/main/jniLibs/arm64-v8a app/src/main/jniLibs/x86_64
+          for abi_target in "aarch64-linux-android:arm64-v8a" "x86_64-linux-android:x86_64"; do
+            target="${abi_target%%:*}"
+            abi="${abi_target##*:}"
+            echo "Building Rust core for $abi ($target)…"
+            cargo ndk -t "$target" -o "app/src/main/jniLibs/$abi" -- \
+              build --manifest-path core/Cargo.toml --release
+          done
+          ls -la app/src/main/jniLibs/*/
 
-      - name: Build unsigned release APK + AAB (no signing secret)
-        if: ${{ secrets.SINEMINER_KEYSTORE_BASE64 == '' }}
+      - name: Assemble signed release APK + AAB (when keystore present)
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
-        run: ./gradlew :app:assembleCi :app:bundleCi --no-daemon --stacktrace
+        run: |
+          if [ -n "$SINEMINER_KEYSTORE_FILE" ]; then
+            ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon --stacktrace
+          else
+            echo "No keystore — falling back to ci build (unsigned)"
+            ./gradlew :app:assembleCi --no-daemon --stacktrace
+          fi
 
       - name: Determine version
         id: ver
         run: |
           if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create GitHub Release
@@ -105,7 +122,7 @@ jobs:
           files: |
             app/build/outputs/apk/**/*.apk
             app/build/outputs/bundle/**/*.aab
-          draft: true
+          draft: false
           prerelease: false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
