@@ -59,10 +59,16 @@ impl StealthAddress {
     pub fn from_keypair(pub_keys: &PublicKeys, network_id: &str) -> Result<Self, AddressError> {
         // Validate both public keys are valid Ristretto points
         use curve25519_dalek::ristretto::CompressedRistretto;
-        if CompressedRistretto::from_slice(&pub_keys.spend).decompress().is_none() {
+        if CompressedRistretto::from_slice(&pub_keys.spend)
+            .decompress()
+            .is_none()
+        {
             return Err(AddressError::InvalidSpendKey);
         }
-        if CompressedRistretto::from_slice(&pub_keys.view).decompress().is_none() {
+        if CompressedRistretto::from_slice(&pub_keys.view)
+            .decompress()
+            .is_none()
+        {
             return Err(AddressError::InvalidViewKey);
         }
         Ok(Self {
@@ -157,10 +163,16 @@ impl StealthAddress {
                 view.copy_from_slice(&payload[32..]);
                 // Validate Ristretto points
                 use curve25519_dalek::ristretto::CompressedRistretto;
-                if CompressedRistretto::from_slice(&spend).decompress().is_none() {
+                if CompressedRistretto::from_slice(&spend)
+                    .decompress()
+                    .is_none()
+                {
                     return Err(AddressError::InvalidSpendKey);
                 }
-                if CompressedRistretto::from_slice(&view).decompress().is_none() {
+                if CompressedRistretto::from_slice(&view)
+                    .decompress()
+                    .is_none()
+                {
                     return Err(AddressError::InvalidViewKey);
                 }
                 return Ok(Self {
@@ -184,10 +196,10 @@ impl StealthAddress {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::keypair::Keypair;
-    use super::super::seed::Seed;
     use super::super::mnemonic::{Mnemonic, WordCount};
+    use super::super::seed::Seed;
+    use super::*;
 
     fn make_wallet_keys() -> (Keypair, StealthAddress) {
         let m = Mnemonic::generate(WordCount::Words24).unwrap();
@@ -220,13 +232,19 @@ mod tests {
 
     #[test]
     fn reject_empty() {
-        assert!(matches!(StealthAddress::parse(""), Err(AddressError::Empty)));
+        assert!(matches!(
+            StealthAddress::parse(""),
+            Err(AddressError::Empty)
+        ));
     }
 
     #[test]
     fn reject_too_long() {
         let long = "a".repeat(MAX_ENCODED_LEN + 1);
-        assert!(matches!(StealthAddress::parse(&long), Err(AddressError::TooLong(_))));
+        assert!(matches!(
+            StealthAddress::parse(&long),
+            Err(AddressError::TooLong(_))
+        ));
     }
 
     #[test]
@@ -239,7 +257,10 @@ mod tests {
     fn reject_wrong_length() {
         // Valid base58 but wrong byte count
         let bad = bs58::encode(vec![0x42u8; 30]).into_string();
-        assert!(matches!(StealthAddress::parse(&bad), Err(AddressError::InvalidLength(_))));
+        assert!(matches!(
+            StealthAddress::parse(&bad),
+            Err(AddressError::InvalidLength(_))
+        ));
     }
 
     #[test]
