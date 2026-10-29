@@ -6,8 +6,11 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.secretarrow.sineminer.data.datastore.SettingsDataStore
+import com.secretarrow.sineminer.data.model.MiningSettings
+import com.secretarrow.sineminer.data.model.PoolConfig
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.first
 
 /**
  * Periodic worker that checks whether to auto-start mining based on the user's
@@ -25,30 +28,23 @@ class MiningWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         val settingsStore = SettingsDataStore(applicationContext)
-        val miningSettings = settingsStore.miningSettings.let {
-            // Take a single snapshot
-            var snapshot: com.secretarrow.sineminer.data.model.MiningSettings? = null
-            kotlinx.coroutines.coroutineScope {
-                it.collect { s ->
-                    snapshot = s
-                    throw kotlinx.coroutines.CancellationException("snapshot taken")
-                }
-            }
-            snapshot
-        } ?: return Result.success()
-
-        if (!miningSettings.autoStartOnCharge) return Result.success()
-
-        val battery = try {
-            val bm = applicationContext.getSystemService(android.content.Context.BATTERY_SERVICE) as android.os.BatteryManager
-            val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            val charging = bm.isCharging
-            Pair(level, charging)
+        val miningSettings: MiningSettings = try {
+            settingsStore.miningSettings.first()
         } catch (e: Exception) {
             return Result.success()
         }
 
-        val (level, charging) = battery
+        if (!miningSettings.autoStartOnCharge) return Result.success()
+
+        // Battery state
+        val (level, charging) = try {
+            val bm = applicationContext.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+            val lvl = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val chg = bm.isCharging
+            lvl to chg
+        } catch (e: Exception) {
+            return Result.success()
+        }
 
         // Stop mining if battery drops below the user's threshold
         if (miningSettings.stopOnLowBattery && level < miningSettings.batteryThresholdPercent) {
@@ -63,23 +59,19 @@ class MiningWorker @AssistedInject constructor(
         // Auto-start only if charging
         if (!charging) return Result.success()
 
-        // Check if mining service is already running; if not, start it
+        // Check if mining service is already running; if not, start it.
         val am = applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        @Suppress("DEPRECATION")
         val running = am.getRunningServices(Int.MAX_VALUE).any {
             it.service.className == MiningForegroundService::class.java.name
         }
         if (running) return Result.success()
 
-        val poolConfig = try {
-            var snapshot: com.secretarrow.sineminer.data.model.PoolConfig? = null
-            kotlinx.coroutines.coroutineScope {
-                settingsStore.poolConfig.collect { p ->
-                    snapshot = p
-                    throw kotlinx.coroutines.CancellationException("snapshot")
-                }
-            }
-            snapshot
-        } catch (e: Exception) { null } ?: com.secretarrow.sineminer.data.model.PoolConfig.DEFAULT
+        val poolConfig: PoolConfig = try {
+            settingsStore.poolConfig.first()
+        } catch (e: Exception) {
+            PoolConfig.DEFAULT
+        }
 
         val intent = Intent(applicationContext, MiningForegroundService::class.java).apply {
             action = MiningForegroundService.ACTION_START

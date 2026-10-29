@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -182,10 +183,4 @@ class MiningForegroundService : Service() {
         const val EXTRA_POOL_HOST = "pool_host"
         const val EXTRA_POOL_PORT = "pool_port"
     }
-}
-
-private fun kotlinx.coroutines.CoroutineScope.cancel() {
-    val ctx = this.coroutineContext
-    val job = ctx[Job]
-    job?.cancel()
 }

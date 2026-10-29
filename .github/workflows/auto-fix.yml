@@ -50,9 +50,6 @@ jobs:
         working-directory: core
         run: cargo clippy --fix --allow-dirty --allow-staged --all-features || true
 
-      - name: Gradle spotlessApply (if present)
-        run: ./gradlew spotlessApply --no-daemon || true
-
       - name: Detect changes
         id: changes
         run: |

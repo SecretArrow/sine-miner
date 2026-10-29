@@ -6,6 +6,8 @@ import com.secretarrow.sineminer.data.local.dao.WalletDao
 import com.secretarrow.sineminer.data.model.Wallet
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Wallet repository — wraps WalletDao and the NativeBridge.
@@ -17,10 +19,12 @@ import javax.inject.Singleton
 class WalletRepository @Inject constructor(
     private val walletDao: WalletDao,
 ) {
-    /** Observe all wallets, newest first. */
-    fun observeAll() = walletDao.observeAll()
+    /** Observe all wallets, newest first, mapped to domain model. */
+    fun observeAll(): Flow<List<Wallet>> =
+        walletDao.observeAll().map { list -> list.map { it.toModel() } }
 
-    fun observePrimary() = walletDao.observePrimary()
+    fun observePrimary(): Flow<Wallet?> =
+        walletDao.observePrimary().map { it?.toModel() }
 
     /**
      * Create a brand-new wallet with a fresh BIP39 mnemonic.
@@ -32,7 +36,6 @@ class WalletRepository @Inject constructor(
         val result = NativeBridge.createWallet(label, wordCount, networkId)
         val mnemonic = result[0]
         val address = result[1]
-        // Encrypt with the user's password to get the keystore blob
         val encryptedBlob = NativeBridge.encryptWallet(label, mnemonic, "", password, networkId)
         val id = walletDao.insert(
             EntityWallet(
@@ -60,7 +63,6 @@ class WalletRepository @Inject constructor(
         networkId: String,
     ): ImportResult {
         val address = NativeBridge.importWallet(label, mnemonic, passphrase, networkId)
-        // If already exists, no-op; otherwise insert.
         val existing = walletDao.getByAddress(address)
         if (existing != null) {
             return ImportResult(id = existing.id, address = address, alreadyExisted = true)
@@ -97,15 +99,23 @@ class WalletRepository @Inject constructor(
 
     fun validateAddress(address: String): Boolean = NativeBridge.validateAddress(address)
 
-    fun validateMnemonic(phrase: String): Boolean {
-        // The native bridge's importWallet will throw on invalid mnemonic; we wrap.
-        return try {
-            NativeBridge.importWallet("__validate__", phrase, "", "blocknet_mainnet")
-            true
-        } catch (_: Exception) {
-            false
-        }
+    fun validateMnemonic(phrase: String): Boolean = try {
+        NativeBridge.importWallet("__validate__", phrase, "", "blocknet_mainnet")
+        true
+    } catch (_: Exception) {
+        false
     }
+
+    /** Map Room entity → domain model. */
+    private fun EntityWallet.toModel(): Wallet = Wallet(
+        id = id,
+        label = label,
+        address = address,
+        networkId = networkId,
+        encryptedBlob = encryptedBlob,
+        createdAt = createdAt,
+        isPrimary = isPrimary,
+    )
 }
 
 data class CreateResult(
