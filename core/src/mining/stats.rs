@@ -61,11 +61,15 @@ impl HashrateTracker {
 
     /// Total hashes observed since tracker creation.
     #[must_use]
-    pub fn total_hashes(&self) -> u64 { self.total_hashes }
+    pub fn total_hashes(&self) -> u64 {
+        self.total_hashes
+    }
 
     /// Owning thread id.
     #[must_use]
-    pub fn thread_id(&self) -> u32 { self.thread_id }
+    pub fn thread_id(&self) -> u32 {
+        self.thread_id
+    }
 
     /// Reset the tracker (e.g., for a new mining round).
     pub fn reset(&mut self) {
@@ -84,7 +88,9 @@ pub struct AggregateHashrate {
 impl AggregateHashrate {
     #[must_use]
     pub fn new(worker_count: usize) -> Self {
-        let workers = (0..worker_count).map(|i| HashrateTracker::new(i as u32)).collect();
+        let workers = (0..worker_count)
+            .map(|i| HashrateTracker::new(i as u32))
+            .collect();
         Self { workers }
     }
 
@@ -99,7 +105,11 @@ impl AggregateHashrate {
     /// Estimate time to find a block at current hashrate, given network difficulty.
     /// Returns `None` if hashrate is 0 or difficulty is 0.
     #[must_use]
-    pub fn estimate_time_to_block(&self, network_hashrate: f64, block_time: Duration) -> Option<Duration> {
+    pub fn estimate_time_to_block(
+        &self,
+        network_hashrate: f64,
+        block_time: Duration,
+    ) -> Option<Duration> {
         let (my_hps, _) = self.snapshot();
         if my_hps <= 0.0 || network_hashrate <= 0.0 {
             return None;
@@ -128,14 +138,18 @@ mod tests {
     #[test]
     fn total_hashes_count_is_accurate() {
         let mut t = HashrateTracker::new(0);
-        for _ in 0..1000 { t.observe(); }
+        for _ in 0..1000 {
+            t.observe();
+        }
         assert_eq!(t.total_hashes(), 1000);
     }
 
     #[test]
     fn reset_clears_state() {
         let mut t = HashrateTracker::new(0);
-        for _ in 0..1000 { t.observe(); }
+        for _ in 0..1000 {
+            t.observe();
+        }
         t.reset();
         assert_eq!(t.total_hashes(), 0);
         assert_eq!(t.samples, 0);

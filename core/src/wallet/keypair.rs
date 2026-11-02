@@ -99,7 +99,10 @@ impl Keypair {
         Ok(Self {
             seed: spend_seed,
             spend_public,
-            view: ViewKey { secret: view_secret, public: view_public },
+            view: ViewKey {
+                secret: view_secret,
+                public: view_public,
+            },
         })
     }
 
@@ -153,8 +156,8 @@ pub fn decompress_rijndael(bytes: &[u8; 32]) -> Option<RistrettoPoint> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::mnemonic::{Mnemonic, WordCount};
+    use super::*;
 
     #[test]
     fn keypair_is_deterministic() {
