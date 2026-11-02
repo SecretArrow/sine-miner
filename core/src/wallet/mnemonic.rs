@@ -75,8 +75,8 @@ impl Mnemonic {
             WordCount::Words21 => 21,
             WordCount::Words24 => 24,
         };
-        let inner = bip39::Mnemonic::generate(bits)
-            .map_err(|e| MnemonicError::Internal(e.to_string()))?;
+        let inner =
+            bip39::Mnemonic::generate(bits).map_err(|e| MnemonicError::Internal(e.to_string()))?;
         Ok(Self { inner })
     }
 
@@ -85,7 +85,11 @@ impl Mnemonic {
     /// # Errors
     /// Returns an error if the phrase is malformed or the checksum doesn't match.
     pub fn parse(phrase: &str) -> Result<Self, MnemonicError> {
-        let phrase = phrase.trim().split_whitespace().collect::<Vec<_>>().join(" ");
+        let phrase = phrase
+            .trim()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ");
         let inner = bip39::Mnemonic::parse_normalized(&phrase)
             .map_err(|e| MnemonicError::Internal(e.to_string()))?;
         Ok(Self { inner })

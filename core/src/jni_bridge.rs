@@ -11,13 +11,11 @@
 use std::ffi::CString;
 use std::sync::OnceLock;
 
-use jni::objects::{
-    JByteArray, JClass, JString, JValue, JObject, JNIEnv, GlobalRef,
-};
-use jni::sys::{jbyte, jbyteArray, jdouble, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
+use jni::objects::{GlobalRef, JByteArray, JClass, JNIEnv, JObject, JString, JValue};
 use jni::strings::JNIString;
+use jni::sys::{jbyte, jbyteArray, jdouble, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
 
-use crate::wallet::{Wallet, WalletConfig, Mnemonic, WordCount};
+use crate::wallet::{Mnemonic, Wallet, WalletConfig, WordCount};
 
 /// Initialize logger once.
 static LOG_INIT: OnceLock<()> = OnceLock::new();
@@ -35,13 +33,17 @@ fn to_jstring<'local>(env: &mut JNIEnv<'local>, s: &str) -> JString<'local> {
         Ok(jstr) => jstr,
         Err(_) => {
             // Fallback: empty string
-            env.new_string("").unwrap_or_else(|_| unsafe { std::mem::zeroed() })
+            env.new_string("")
+                .unwrap_or_else(|_| unsafe { std::mem::zeroed() })
         }
     }
 }
 
 /// Helper to return an error result as a Java String (or null).
-fn error_to_jstring<'local>(env: &mut JNIEnv<'local>, e: &dyn std::error::Error) -> JString<'local> {
+fn error_to_jstring<'local>(
+    env: &mut JNIEnv<'local>,
+    e: &dyn std::error::Error,
+) -> JString<'local> {
     to_jstring(env, &e.to_string())
 }
 
@@ -105,11 +107,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_c
             let phrase = mnemonic.to_phrase();
             let address = wallet.address_string();
 
-            let arr = match env.new_object_array(
-                2,
-                "java/lang/String",
-                JObject::null(),
-            ) {
+            let arr = match env.new_object_array(2, "java/lang/String", JObject::null()) {
                 Ok(a) => a,
                 Err(e) => {
                     throw_runtime(&mut env, &e.to_string());
@@ -163,9 +161,18 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_i
     init_logger_once();
 
     let label: String = env.get_string(&label).map(Into::into).unwrap_or_default();
-    let mnemonic: String = env.get_string(&mnemonic).map(Into::into).unwrap_or_default();
-    let passphrase: String = env.get_string(&passphrase).map(Into::into).unwrap_or_default();
-    let network_id: String = env.get_string(&network_id).map(Into::into).unwrap_or_default();
+    let mnemonic: String = env
+        .get_string(&mnemonic)
+        .map(Into::into)
+        .unwrap_or_default();
+    let passphrase: String = env
+        .get_string(&passphrase)
+        .map(Into::into)
+        .unwrap_or_default();
+    let network_id: String = env
+        .get_string(&network_id)
+        .map(Into::into)
+        .unwrap_or_default();
 
     let config = WalletConfig {
         network_id,
@@ -230,21 +237,40 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_e
     init_logger_once();
 
     let label: String = env.get_string(&label).map(Into::into).unwrap_or_default();
-    let mnemonic: String = env.get_string(&mnemonic).map(Into::into).unwrap_or_default();
-    let passphrase: String = env.get_string(&passphrase).map(Into::into).unwrap_or_default();
-    let password: String = env.get_string(&password).map(Into::into).unwrap_or_default();
-    let network_id: String = env.get_string(&network_id).map(Into::into).unwrap_or_default();
+    let mnemonic: String = env
+        .get_string(&mnemonic)
+        .map(Into::into)
+        .unwrap_or_default();
+    let passphrase: String = env
+        .get_string(&passphrase)
+        .map(Into::into)
+        .unwrap_or_default();
+    let password: String = env
+        .get_string(&password)
+        .map(Into::into)
+        .unwrap_or_default();
+    let network_id: String = env
+        .get_string(&network_id)
+        .map(Into::into)
+        .unwrap_or_default();
 
-    let config = WalletConfig { network_id, ..Default::default() };
+    let config = WalletConfig {
+        network_id,
+        ..Default::default()
+    };
 
     let result: Result<String, String> = (|| {
-        let wallet = Wallet::import(&label, &mnemonic, &passphrase, config).map_err(|e| e.to_string())?;
+        let wallet =
+            Wallet::import(&label, &mnemonic, &passphrase, config).map_err(|e| e.to_string())?;
         let encrypted = wallet.encrypt(&password).map_err(|e| e.to_string())?;
         encrypted.to_json().map_err(|e| e.to_string())
     })();
 
     match result {
-        Ok(json) => env.new_string(&json).map(|s| s.into_raw()).unwrap_or(std::ptr::null_mut()),
+        Ok(json) => env
+            .new_string(&json)
+            .map(|s| s.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
         Err(e) => {
             throw_runtime(&mut env, &e);
             std::ptr::null_mut()
@@ -327,24 +353,23 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_h
         return std::ptr::null_mut();
     }
     let engine = unsafe { &*(handle as *const crate::mining::MiningEngine) };
-    let header_bytes = match env.get_byte_array_elements(&header_base, jni::objects::ReleaseMode::Copy) {
-        Ok(b) => b,
-        Err(e) => {
-            throw_runtime(&mut env, &e.to_string());
-            return std::ptr::null_mut();
-        }
-    };
+    let header_bytes =
+        match env.get_byte_array_elements(&header_base, jni::objects::ReleaseMode::Copy) {
+            Ok(b) => b,
+            Err(e) => {
+                throw_runtime(&mut env, &e.to_string());
+                return std::ptr::null_mut();
+            }
+        };
     let header_vec: Vec<u8> = header_bytes.iter().map(|b| *b as u8).collect();
     match engine.hash_once(&header_vec, nonce as u64) {
-        Ok(result) => {
-            match env.byte_array_from_slice(&result.hash) {
-                Ok(arr) => arr.into_raw(),
-                Err(e) => {
-                    throw_runtime(&mut env, &e.to_string());
-                    std::ptr::null_mut()
-                }
+        Ok(result) => match env.byte_array_from_slice(&result.hash) {
+            Ok(arr) => arr.into_raw(),
+            Err(e) => {
+                throw_runtime(&mut env, &e.to_string());
+                std::ptr::null_mut()
             }
-        }
+        },
         Err(e) => {
             throw_runtime(&mut env, &e.to_string());
             std::ptr::null_mut()

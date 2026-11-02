@@ -17,9 +17,9 @@ pub mod wallet;
 #[cfg(target_os = "android")]
 pub mod jni_bridge;
 
-pub use mining::{MiningEngine, MiningEvent, MiningConfig};
+pub use mining::{MiningConfig, MiningEngine, MiningEvent};
+pub use stratum::{PoolNotification, ShareSubmission, StratumClient, StratumConfig, StratumError};
 pub use wallet::{Wallet, WalletConfig, WalletError};
-pub use stratum::{StratumClient, StratumConfig, StratumError, PoolNotification, ShareSubmission};
 
 /// Semantic version of the core library. Matches Cargo.toml.
 pub const CORE_VERSION: &str = env!("CARGO_PKG_VERSION");
