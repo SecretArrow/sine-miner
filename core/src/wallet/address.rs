@@ -3,8 +3,8 @@
 //!
 //! Format follows the documented Blocknet address scheme used in seine's
 //! `address.rs`:
-//! - payload: 64 bytes = spend_pub (32) || view_pub (32)
-//! - checksum: first 4 bytes of SHA3-256("blocknet_stealth_address_checksum" || network_id || payload)
+//! - payload: 64 bytes = `spend_pub` (32) || `view_pub` (32)
+//! - checksum: first 4 bytes of SHA3-256("blocknet_stealth_address_checksum" || `network_id` || payload)
 //! - encoded: base58(payload || checksum), 68-byte total raw
 //!
 //! This implementation is original — it does not import seine's code.
@@ -189,10 +189,10 @@ impl StealthAddress {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::keypair::Keypair;
-    use super::super::seed::Seed;
     use super::super::mnemonic::{Mnemonic, WordCount};
+    use super::super::seed::Seed;
+    use super::*;
 
     fn make_wallet_keys() -> (Keypair, StealthAddress) {
         let m = Mnemonic::generate(WordCount::Words24).unwrap();
@@ -225,13 +225,19 @@ mod tests {
 
     #[test]
     fn reject_empty() {
-        assert!(matches!(StealthAddress::parse(""), Err(AddressError::Empty)));
+        assert!(matches!(
+            StealthAddress::parse(""),
+            Err(AddressError::Empty)
+        ));
     }
 
     #[test]
     fn reject_too_long() {
         let long = "a".repeat(MAX_ENCODED_LEN + 1);
-        assert!(matches!(StealthAddress::parse(&long), Err(AddressError::TooLong(_))));
+        assert!(matches!(
+            StealthAddress::parse(&long),
+            Err(AddressError::TooLong(_))
+        ));
     }
 
     #[test]
@@ -244,7 +250,10 @@ mod tests {
     fn reject_wrong_length() {
         // Valid base58 but wrong byte count
         let bad = bs58::encode(vec![0x42u8; 30]).into_string();
-        assert!(matches!(StealthAddress::parse(&bad), Err(AddressError::InvalidLength(_))));
+        assert!(matches!(
+            StealthAddress::parse(&bad),
+            Err(AddressError::InvalidLength(_))
+        ));
     }
 
     #[test]

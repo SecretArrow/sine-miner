@@ -3,8 +3,8 @@
 
 use sineminer_core::mining::{MiningConfig, MiningEngine};
 use sineminer_core::wallet::{
-    Mnemonic, StealthAddress, Wallet, WalletConfig, WordCount,
     address::{NETWORK_ID_MAINNET, NETWORK_ID_TESTNET},
+    Mnemonic, StealthAddress, Wallet, WalletConfig, WordCount,
 };
 
 #[test]
@@ -105,7 +105,13 @@ fn header_validation_rejects_short_input() {
 
 #[test]
 fn mnemonic_word_counts_produce_expected_lengths() {
-    for wc in [WordCount::Words12, WordCount::Words15, WordCount::Words18, WordCount::Words21, WordCount::Words24] {
+    for wc in [
+        WordCount::Words12,
+        WordCount::Words15,
+        WordCount::Words18,
+        WordCount::Words21,
+        WordCount::Words24,
+    ] {
         let m = Mnemonic::generate(wc).unwrap();
         let words = m.to_phrase().split_whitespace().count();
         assert_eq!(words, wc as usize);

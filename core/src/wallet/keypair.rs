@@ -70,10 +70,10 @@ pub struct Keypair {
 impl Keypair {
     /// Derive a keypair from a 64-byte BIP39 seed.
     ///
-    /// - spend_secret = seed[0..32] (used directly as ed25519 seed)
-    /// - view_secret  = HKDF-Expand(spend_secret, info="blocknet/view/v1", 32)
-    /// - spend_public = ed25519 verifying key
-    /// - view_public  = Ristretto scalar * basepoint
+    /// - `spend_secret` = seed[0..32] (used directly as ed25519 seed)
+    /// - `view_secret`  = HKDF-Expand(spend_secret, info="blocknet/view/v1", 32)
+    /// - `spend_public` = ed25519 verifying key
+    /// - `view_public`  = Ristretto scalar * basepoint
     ///
     /// # Errors
     /// Returns an error if seed length or key derivation fails.
@@ -99,7 +99,10 @@ impl Keypair {
         Ok(Self {
             seed: spend_seed,
             spend_public,
-            view: ViewKey { secret: view_secret, public: view_public },
+            view: ViewKey {
+                secret: view_secret,
+                public: view_public,
+            },
         })
     }
 
@@ -153,8 +156,8 @@ pub fn decompress_rijndael(bytes: &[u8; 32]) -> Option<RistrettoPoint> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::mnemonic::{Mnemonic, WordCount};
+    use super::*;
 
     #[test]
     fn keypair_is_deterministic() {

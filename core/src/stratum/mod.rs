@@ -15,9 +15,14 @@ pub mod capabilities;
 pub mod client;
 pub mod protocol;
 
-pub use capabilities::{ClientCapabilities, CAP_LOGIN_NEGOTIATION, CAP_VALIDATION_STATUS, CAP_SUBMIT_CLAIMED_HASH, CAP_DIFFICULTY_HINT, CAP_SAME_TEMPLATE_REBIND_V1, CAP_SUBMIT_TIMING_V1};
+pub use capabilities::{
+    ClientCapabilities, CAP_DIFFICULTY_HINT, CAP_LOGIN_NEGOTIATION, CAP_SAME_TEMPLATE_REBIND_V1,
+    CAP_SUBMIT_CLAIMED_HASH, CAP_SUBMIT_TIMING_V1, CAP_VALIDATION_STATUS,
+};
 pub use client::StratumClient;
-pub use protocol::{LoginRequest, LoginResponse, NotifyMessage, SubmitRequest, SubmitResponse, PoolNotification};
+pub use protocol::{
+    LoginRequest, LoginResponse, NotifyMessage, PoolNotification, SubmitRequest, SubmitResponse,
+};
 
 /// Stratum configuration.
 #[derive(Debug, Clone)]

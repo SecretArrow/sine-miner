@@ -16,7 +16,9 @@ impl NonceScheduler {
     /// seeds will produce non-overlapping sequences (modulo 2^64 wrap-around).
     #[must_use]
     pub fn new(seed: u64) -> Self {
-        Self { counter: AtomicU64::new(seed) }
+        Self {
+            counter: AtomicU64::new(seed),
+        }
     }
 
     /// Return the next nonce.
@@ -70,7 +72,9 @@ mod tests {
     #[test]
     fn reset_brings_counter_back() {
         let s = NonceScheduler::new(0);
-        for _ in 0..1000 { s.next(); }
+        for _ in 0..1000 {
+            s.next();
+        }
         s.reset(42);
         assert_eq!(s.next(), 42);
     }
