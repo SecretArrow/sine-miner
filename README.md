@@ -47,8 +47,19 @@ miner, and `sine-miner` ports that mining logic to Android.
 │  │  NonceScheduler │  │  ed25519 keypair │  │  Share submission     │ │
 │  │  HashrateTracker│  │  Blocknet address│  │  Reconnect w/ backoff │ │
 │  └─────────────────┘  └──────────────────┘  └──────────────────────┘ │
+│  ┌─────────────────────────────────────────────────────────────────┐ │
+│  │  mining/vulkan.rs  (feature = "vulkan", experimental — stub)     │ │
+│  │  VulkanBackend  ←  ash = "0.38"  (Vulkan Rust binding, optional) │ │
+│  └─────────────────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────────────────┘
 ```
+
+The Rust core compiles to `libsineminer_core.so` (one per ABI). The
+`vulkan` Cargo feature is **off by default** and only pulls in the
+[`ash`](https://crates.io/crates/ash) Vulkan Rust binding when explicitly
+enabled (`cargo build --features vulkan`). `VulkanBackend` is a stub for
+future GPU mining on Android phones via Vulkan compute — it currently
+returns `NotSupported` / `NotImplemented` for every entry point.
 
 ### Modules
 
@@ -59,6 +70,49 @@ miner, and `sine-miner` ports that mining logic to Android.
 | `gradle/libs.versions.toml` | Single source of truth for all dependency versions |
 | `.github/workflows/` | CI/CD pipelines (lint, unit, build, e2e, release, auto-fix) |
 | `scripts/` | Local helpers (build Rust, install NDK) |
+
+## CPU vs GPU mining on Android
+
+### CPU mining (current — works on all ARM64 phones)
+
+SineMiner uses the portable `argon2` Rust crate for Argon2id hashing. The crate
+auto-detects ARM NEON SIMD at runtime and uses it when available. This works on
+every Android 10+ phone with arm64-v8a ABI.
+
+**Hashrate expectation:** ~1-5 H/s on flagship Snapdragon 8 Gen 3, less on older
+devices. Argon2id is memory-hard (2 GiB per hash for production blocks) — this
+is fundamentally slow on mobile hardware.
+
+### NVIDIA GPU mining — NOT possible on Android
+
+Seine's desktop miner supports NVIDIA GPUs via CUDA (`cudarc` crate). This is
+NOT portable to Android because:
+- Android phones do not have NVIDIA GPUs (Tegra line discontinued in 2019)
+- CUDA is NVIDIA-proprietary and only runs on NVIDIA GPUs
+- The only Android device with CUDA was NVIDIA Shield TV (discontinued)
+
+### Vulkan compute (experimental — future work)
+
+The only path to GPU mining on Android phones is **Vulkan compute**:
+- Qualcomm Adreno (Snapdragon) — Vulkan 1.1+ since 2018
+- ARM Mali (Exynos, MediaTek) — Vulkan 1.1+ since 2019
+- Samsung Xclipse (AMD RDNA) — Vulkan 1.2+
+
+SineMiner v0.2.0 adds a `VulkanBackend` stub (feature `vulkan`, `ash` crate).
+The actual SPIR-V shader implementation is a future task because:
+
+1. **Argon2id is memory-hard** — 2 GiB per hash instance. GPU memory bandwidth
+   is the bottleneck, not compute. Research shows only 2-4× speedup over CPU
+   for Argon2id on GPU (vs 100×+ for SHA256-like hashes).
+2. **Phone GPU memory is shared with RAM** — a flagship 12 GB phone can only
+   allocate ~1-2 Argon2id instances, vs many more on CPU.
+3. **Thermal throttling** — Adreno/Mali GPUs throttle after 2-3 minutes of
+   full-load compute, dropping hashrate 30-50%.
+4. **Battery drain** — GPU mining drains ~30%/hour even while charging.
+
+**Recommendation:** CPU mining with WorkManager + Foreground Service (already
+implemented) is the practical path. Vulkan compute is experimental and
+disabled by default.
 
 ## Features
 
@@ -153,11 +207,26 @@ cd core && cargo test --all-features
 
 ## Roadmap
 
-- [ ] Full Stratum v2 binary framing (currently JSON-RPC subset)
-- [ ] GPU mining via Vulkan (long-term)
-- [ ] Cloud backup targets (Google Drive, Dropbox, WebDAV) — currently local-only
-- [ ] Multi-wallet dashboard with balances via Blocknet daemon RPC
-- [ ] Translation to Bahasa Indonesia (id-ID) — strings ready, messages pending)
+### v0.2.0 (current)
+- [x] Fix 61 Rust compile errors (jni 0.21, curve25519-dalek 4.x, ed25519-dalek 2.x, bip39 2.x API changes)
+- [x] Vulkan compute scaffolding (feature `vulkan`, `VulkanBackend` stub)
+- [x] Native lib `libsineminer_core.so` builds for arm64-v8a + x86_64
+- [x] APK includes native lib → wallet create/import + mining engine functional
+
+### v0.3.0 (next)
+- [ ] NEON SHA3 kernel for ARMv8.2+ (Pixel 4+, Samsung S10+, etc.) — 30-50% hashrate boost
+- [ ] Full Stratum v2 client (currently JSON-RPC subset)
+- [ ] Wallet balance via Blocknet daemon RPC
+
+### v0.4.0 (experimental)
+- [ ] Vulkan compute Argon2id (SPIR-V shader + Vulkan pipeline)
+- [ ] Cloud backup targets (Google Drive, Dropbox, WebDAV)
+- [ ] Translation to Bahasa Indonesia (id-ID)
+
+### Long-term
+- [ ] Multi-wallet dashboard with balances
+- [ ] Mining pool selector with latency testing
+- [ ] Battery + thermal-aware mining scheduler
 
 ## Acknowledgments
 

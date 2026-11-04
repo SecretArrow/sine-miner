@@ -4,10 +4,9 @@
 //! public keys. The view key is derived from the same seed with a different
 //! HKDF info tag, so a single mnemonic produces both keys deterministically.
 
-use curve25519_dalek::constants::RISTRETTO_BASEPOINT_TABLE;
 use curve25519_dalek::ristretto::{CompressedRistretto, RistrettoPoint};
 use curve25519_dalek::scalar::Scalar;
-use ed25519_dalek::{SigningKey, VerifyingKey};
+use ed25519_dalek::{Signer, SigningKey, VerifyingKey};
 use hkdf::Hkdf;
 use sha2::Sha512;
 use zeroize::Zeroize;
@@ -91,9 +90,10 @@ impl Keypair {
         let mut view_secret = [0u8; 32];
         h.expand(b"blocknet/view/v1", &mut view_secret)
             .map_err(|_| KeypairError::HkdfFailed)?;
-        // Clamp to a valid Ristretto scalar
-        let view_scalar = Scalar::from_bytes_mod_order_wide(&view_secret);
-        let view_public_point = view_scalar * RISTRETTO_BASEPOINT_TABLE;
+        // Clamp to a valid Ristretto scalar. `from_bytes_mod_order` takes a
+        // 32-byte value (the HKDF output) and reduces it modulo the group order.
+        let view_scalar = Scalar::from_bytes_mod_order(view_secret);
+        let view_public_point = RistrettoPoint::mul_base(&view_scalar);
         let view_public = view_public_point.compress().to_bytes();
 
         Ok(Self {
@@ -148,7 +148,7 @@ impl Drop for Keypair {
 /// Decompress a Ristretto point, returning None if invalid.
 #[must_use]
 pub fn decompress_rijndael(bytes: &[u8; 32]) -> Option<RistrettoPoint> {
-    CompressedRistretto::from_slice(bytes).decompress()
+    CompressedRistretto(*bytes).decompress()
 }
 
 #[cfg(test)]
@@ -198,5 +198,3 @@ mod tests {
         assert!(decompress_rijndael(&k.view.public).is_some());
     }
 }
-
-use super::seed::Seed;

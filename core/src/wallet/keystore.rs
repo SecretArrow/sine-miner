@@ -19,6 +19,7 @@ use aes_gcm::aead::Aead;
 use base64::Engine;
 use pbkdf2::pbkdf2_hmac;
 use rand_core::OsRng;
+use rand_core::RngCore;
 use sha2::Sha256;
 use zeroize::Zeroize;
 

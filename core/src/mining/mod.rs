@@ -10,7 +10,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
 use tokio::sync::Mutex;
 use tokio::sync::mpsc;
@@ -24,6 +24,10 @@ pub mod target;
 pub use nonce::NonceScheduler;
 pub use stats::HashrateTracker;
 pub use target::{difficulty_to_target, meets_target, target_to_hex};
+
+/// Vulkan compute backend (experimental, gated behind `vulkan` feature).
+#[cfg(feature = "vulkan")]
+pub mod vulkan;
 
 /// Argon2id memory cost (KiB) for production-valid Blocknet blocks.
 /// seine's `pow-spec` crate hard-codes 2 * 1024 * 1024 = 2 GiB.
@@ -153,7 +157,7 @@ impl MiningEngine {
     /// Returns an error if Argon2id parameters are out of bounds.
     pub fn new(config: MiningConfig) -> Result<Self> {
         let params = Params::new(config.memory_kib, config.iterations, config.parallelism, Some(POW_OUTPUT_LEN))
-            .context("invalid Argon2id parameters")?;
+            .map_err(|e| anyhow::anyhow!("invalid Argon2id parameters: {e}"))?;
         let argon = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
         Ok(Self { config, argon })
     }
@@ -177,7 +181,7 @@ impl MiningEngine {
         let mut hash = [0u8; POW_OUTPUT_LEN];
         self.argon
             .hash_password_into(pwd, salt, &mut hash)
-            .context("argon2 hashing failed")?;
+            .map_err(|e| anyhow::anyhow!("argon2 hashing failed: {e}"))?;
 
         Ok(HashResult { nonce, hash })
     }
@@ -303,7 +307,7 @@ impl MiningEngine {
     fn clone_for_thread(&self) -> Self {
         Self {
             config: self.config.clone(),
-            argon: Argon2::new(Algorithm::Argon2id, Version::V0x13, self.argon.params()),
+            argon: Argon2::new(Algorithm::Argon2id, Version::V0x13, self.argon.params().clone()),
         }
     }
 

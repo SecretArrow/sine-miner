@@ -19,7 +19,10 @@ pub mod jni_bridge;
 
 pub use mining::{MiningEngine, MiningEvent, MiningConfig};
 pub use wallet::{Wallet, WalletConfig, WalletError};
-pub use stratum::{StratumClient, StratumConfig, StratumError, PoolNotification, ShareSubmission};
+pub use stratum::{StratumClient, StratumConfig, StratumError, PoolNotification};
+
+#[cfg(feature = "vulkan")]
+pub use mining::vulkan::{VulkanBackend, VulkanError};
 
 /// Semantic version of the core library. Matches Cargo.toml.
 pub const CORE_VERSION: &str = env!("CARGO_PKG_VERSION");

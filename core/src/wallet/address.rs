@@ -57,12 +57,15 @@ impl StealthAddress {
     /// # Errors
     /// Returns an error if the public keys are not valid Ristretto points.
     pub fn from_keypair(pub_keys: &PublicKeys, network_id: &str) -> Result<Self, AddressError> {
-        // Validate both public keys are valid Ristretto points
+        // Validate both public keys are valid curve25519 points.
+        // The spend key is an ed25519 verifying key (Edwards point) and the
+        // view key is a Ristretto point — both are 32-byte compressed encodings.
+        use curve25519_dalek::edwards::CompressedEdwardsY;
         use curve25519_dalek::ristretto::CompressedRistretto;
-        if CompressedRistretto::from_slice(&pub_keys.spend).decompress().is_none() {
+        if CompressedEdwardsY(pub_keys.spend).decompress().is_none() {
             return Err(AddressError::InvalidSpendKey);
         }
-        if CompressedRistretto::from_slice(&pub_keys.view).decompress().is_none() {
+        if CompressedRistretto(pub_keys.view).decompress().is_none() {
             return Err(AddressError::InvalidViewKey);
         }
         Ok(Self {
@@ -155,12 +158,14 @@ impl StealthAddress {
                 let mut view = [0u8; 32];
                 spend.copy_from_slice(&payload[..32]);
                 view.copy_from_slice(&payload[32..]);
-                // Validate Ristretto points
+                // Validate curve25519 points — spend is Edwards (ed25519),
+                // view is Ristretto.
+                use curve25519_dalek::edwards::CompressedEdwardsY;
                 use curve25519_dalek::ristretto::CompressedRistretto;
-                if CompressedRistretto::from_slice(&spend).decompress().is_none() {
+                if CompressedEdwardsY(spend).decompress().is_none() {
                     return Err(AddressError::InvalidSpendKey);
                 }
-                if CompressedRistretto::from_slice(&view).decompress().is_none() {
+                if CompressedRistretto(view).decompress().is_none() {
                     return Err(AddressError::InvalidViewKey);
                 }
                 return Ok(Self {

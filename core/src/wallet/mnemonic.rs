@@ -108,7 +108,7 @@ impl Mnemonic {
     /// Underlying entropy bytes.
     #[must_use]
     pub fn entropy(&self) -> Vec<u8> {
-        self.inner.entropy().to_vec()
+        self.inner.to_entropy()
     }
 }
 

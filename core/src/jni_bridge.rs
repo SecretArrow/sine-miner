@@ -11,8 +11,9 @@
 use std::ffi::CString;
 use std::sync::OnceLock;
 
+use jni::JNIEnv;
 use jni::objects::{
-    JByteArray, JClass, JString, JValue, JObject, JNIEnv, GlobalRef,
+    JByteArray, JClass, JString, JValue, JObject, GlobalRef,
 };
 use jni::sys::{jbyte, jbyteArray, jdouble, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
 use jni::strings::JNIString;
@@ -62,7 +63,7 @@ fn throw_runtime<'local>(env: &mut JNIEnv<'local>, msg: &str) {
 /// ```
 /// Returns `String[2] = {mnemonic_phrase, address}` or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_createWallet(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_createWallet<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -152,7 +153,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_c
 /// ```
 /// Returns the address or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_importWallet(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_importWallet<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -195,7 +196,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_i
 /// public static native boolean validateAddress(String address);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_validateAddress(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_validateAddress<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     address: JString<'local>,
@@ -218,7 +219,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_v
 /// ```
 /// Returns the encrypted keystore JSON or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_encryptWallet(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_encryptWallet<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -263,7 +264,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_e
 /// public static native long startMining(int memoryKib, int threads, long nonceSeed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_startMining(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_startMining<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     memory_kib: jint,
@@ -295,7 +296,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_s
 /// public static native void stopMining(long handle);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_stopMining(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_stopMining<'local>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
     handle: jlong,
@@ -315,7 +316,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_s
 /// public static native byte[] hashOnce(long handle, byte[] headerBase, long nonce);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_hashOnce(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_hashOnce<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     handle: jlong,
@@ -327,14 +328,13 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_h
         return std::ptr::null_mut();
     }
     let engine = unsafe { &*(handle as *const crate::mining::MiningEngine) };
-    let header_bytes = match env.get_byte_array_elements(&header_base, jni::objects::ReleaseMode::Copy) {
+    let header_vec: Vec<u8> = match env.convert_byte_array(&header_base) {
         Ok(b) => b,
         Err(e) => {
             throw_runtime(&mut env, &e.to_string());
             return std::ptr::null_mut();
         }
     };
-    let header_vec: Vec<u8> = header_bytes.iter().map(|b| *b as u8).collect();
     match engine.hash_once(&header_vec, nonce as u64) {
         Ok(result) => {
             match env.byte_array_from_slice(&result.hash) {
@@ -359,22 +359,20 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_h
 /// public static native boolean meetsTarget(byte[] hash, byte[] target);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_meetsTarget(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_meetsTarget<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     hash: JByteArray<'local>,
     target: JByteArray<'local>,
 ) -> jint {
-    let hash_bytes = match env.get_byte_array_elements(&hash, jni::objects::ReleaseMode::Copy) {
+    let hash_vec: Vec<u8> = match env.convert_byte_array(&hash) {
         Ok(b) => b,
         Err(_) => return JNI_FALSE as jint,
     };
-    let target_bytes = match env.get_byte_array_elements(&target, jni::objects::ReleaseMode::Copy) {
+    let target_vec: Vec<u8> = match env.convert_byte_array(&target) {
         Ok(b) => b,
         Err(_) => return JNI_FALSE as jint,
     };
-    let hash_vec: Vec<u8> = hash_bytes.iter().map(|b| *b as u8).collect();
-    let target_vec: Vec<u8> = target_bytes.iter().map(|b| *b as u8).collect();
     if hash_vec.len() != 32 || target_vec.len() != 32 {
         return JNI_FALSE as jint;
     }
@@ -392,7 +390,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_m
 /// public static native String coreVersion();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_coreVersion(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_coreVersion<'local>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jstring {

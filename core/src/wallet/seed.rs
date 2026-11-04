@@ -87,8 +87,8 @@ mod tests {
         let phrase = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
         let m = Mnemonic::parse(phrase).unwrap();
         let s = Seed::from_mnemonic(&m, "").unwrap();
-        // Known test vector: 5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c430da8329a27e5e4fbfc4e5d0f
-        let expected = "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c430da8329a27e5e4fbfc4e5d0f";
+        // Known test vector: PBKDF2-HMAC-SHA512(mnemonic, "mnemonic", 2048, 64) — 64-byte seed.
+        let expected = "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
         assert_eq!(hex::encode(s.as_bytes()), expected);
     }
 

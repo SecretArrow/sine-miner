@@ -18,7 +18,7 @@ pub use address::{AddressError, StealthAddress};
 pub use keypair::{Keypair, KeypairError, PublicKeys, ViewKey};
 pub use keystore::{EncryptedWallet, KeystoreError};
 pub use mnemonic::{Mnemonic, MnemonicError, WordCount};
-pub use seed::Seed;
+pub use seed::{Seed, SeedError};
 
 /// Wallet configuration.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -58,6 +58,8 @@ pub enum WalletError {
     Address(#[from] AddressError),
     #[error("keystore error: {0}")]
     Keystore(#[from] KeystoreError),
+    #[error("seed error: {0}")]
+    Seed(#[from] SeedError),
     #[error("invalid password")]
     InvalidPassword,
     #[error("wallet not found")]
@@ -73,7 +75,7 @@ impl Wallet {
         let mnemonic = Mnemonic::generate(word_count)?;
         let seed = Seed::from_mnemonic(&mnemonic, "")?;
         let keypair = Keypair::from_seed(&seed)?;
-        let address = StealthAddress::from_keypair(&keypair, &config.network_id)?;
+        let address = StealthAddress::from_keypair(&keypair.public_keys(), &config.network_id)?;
         Ok((
             Self {
                 label: label.to_string(),
@@ -93,7 +95,7 @@ impl Wallet {
         let mnemonic = Mnemonic::parse(mnemonic_phrase)?;
         let seed = Seed::from_mnemonic(&mnemonic, passphrase)?;
         let keypair = Keypair::from_seed(&seed)?;
-        let address = StealthAddress::from_keypair(&keypair, &config.network_id)?;
+        let address = StealthAddress::from_keypair(&keypair.public_keys(), &config.network_id)?;
         Ok(Self {
             label: label.to_string(),
             keypair,
