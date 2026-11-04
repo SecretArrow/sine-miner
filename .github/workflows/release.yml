@@ -84,15 +84,19 @@ jobs:
           ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
           ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.0.12077973
         run: |
-          mkdir -p ../app/src/main/jniLibs/arm64-v8a ../app/src/main/jniLibs/x86_64
+          # cargo-ndk's -o flag creates the per-ABI subdirectory itself.
+          # Do NOT append /$abi to -o, otherwise we get nested:
+          # app/src/main/jniLibs/$abi/$abi/libsineminer_core.so (wrong).
+          mkdir -p ../app/src/main/jniLibs
           for abi_target in "aarch64-linux-android:arm64-v8a" "x86_64-linux-android:x86_64"; do
             target="${abi_target%%:*}"
             abi="${abi_target##*:}"
             echo "Building Rust core for $abi ($target)…"
-            cargo ndk -t "$target" -o "../app/src/main/jniLibs/$abi" -- build --release || \
+            cargo ndk -t "$target" -o "../app/src/main/jniLibs" -- build --release || \
               echo "::warning::Rust build for $abi failed — APK will ship without native lib; wallet/mining features will be disabled at runtime"
           done
-          ls -la ../app/src/main/jniLibs/*/ || true
+          echo "=== Final jniLibs layout ==="
+          ls -la ../app/src/main/jniLibs/*/ 2>&1 || true
 
       - name: Assemble signed release APK + AAB (when keystore present)
         env:
