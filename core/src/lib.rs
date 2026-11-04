@@ -1,4 +1,4 @@
-//! SineMiner Rust core — Blocknet Argon2id mining + BIP39 wallet + Stratum client.
+//! `SineMiner` Rust core — Blocknet Argon2id mining + BIP39 wallet + Stratum client.
 //!
 //! This crate is consumed by the Android app via JNI (see `jni_bridge.rs`).
 //! It is also a normal rlib for host-side unit tests.
@@ -17,9 +17,9 @@ pub mod wallet;
 #[cfg(target_os = "android")]
 pub mod jni_bridge;
 
-pub use mining::{MiningEngine, MiningEvent, MiningConfig};
+pub use mining::{MiningConfig, MiningEngine, MiningEvent};
+pub use stratum::{PoolNotification, StratumClient, StratumConfig, StratumError};
 pub use wallet::{Wallet, WalletConfig, WalletError};
-pub use stratum::{StratumClient, StratumConfig, StratumError, PoolNotification};
 
 #[cfg(feature = "vulkan")]
 pub use mining::vulkan::{VulkanBackend, VulkanError};

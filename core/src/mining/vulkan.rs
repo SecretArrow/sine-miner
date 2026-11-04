@@ -78,7 +78,7 @@ impl VulkanBackend {
         false
     }
 
-    /// Hash one (header_base, nonce) pair under Argon2id using Vulkan compute.
+    /// Hash one (`header_base`, nonce) pair under Argon2id using Vulkan compute.
     ///
     /// # Errors
     /// Returns `VulkanError::NotImplemented` until the backend is implemented.
