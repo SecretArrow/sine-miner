@@ -1,6 +1,6 @@
-//! Mining engine — Blocknet Argon2id PoW.
+//! Mining engine — Blocknet Argon2id `PoW`.
 //!
-//! This is a fresh Rust implementation that follows the Blocknet PoW spec
+//! This is a fresh Rust implementation that follows the Blocknet `PoW` spec
 //! (Argon2id with 2 GB memory cost, 1 iteration, 1 lane, 32-byte output)
 //! matching the parameters in seine's `pow-spec` crate. The exact CPU ISA
 //! kernels (AVX2/AVX-512/NEON/SHA3 streaming) from seine are NOT ported here;
@@ -12,8 +12,8 @@ use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use argon2::{Algorithm, Argon2, Params, Version};
-use tokio::sync::Mutex;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 
 use crate::util::hex;
 
@@ -51,7 +51,7 @@ pub const MAX_HEADER_BASE_LEN: usize = 4096;
 /// Mining configuration. All fields are tunable per device.
 #[derive(Debug, Clone)]
 pub struct MiningConfig {
-    /// Argon2id memory cost in KiB. Production blocks require 2_097_152 (2 GiB).
+    /// Argon2id memory cost in KiB. Production blocks require `2_097_152` (2 GiB).
     /// Mobile devices should reduce this for testing only — shares will be rejected by pools.
     pub memory_kib: u32,
     /// Argon2id iterations (1 for production).
@@ -86,13 +86,19 @@ impl MiningConfig {
     /// Lower-memory preset for low-end Android devices. Produces invalid blocks (testing only).
     #[must_use]
     pub fn low_memory() -> Self {
-        Self { memory_kib: 256 * 1024, ..Self::default() }
+        Self {
+            memory_kib: 256 * 1024,
+            ..Self::default()
+        }
     }
 
     /// 1 GiB preset. Will still be rejected by pools but won't OOM most flagship phones.
     #[must_use]
     pub fn medium_memory() -> Self {
-        Self { memory_kib: 1024 * 1024, ..Self::default() }
+        Self {
+            memory_kib: 1024 * 1024,
+            ..Self::default()
+        }
     }
 
     /// Production preset — full 2 GiB Argon2id. Only suitable for phones with ≥ 6 GiB free RAM.
@@ -110,9 +116,17 @@ pub enum MiningEvent {
     /// A nonce was tried. (Useful for debugging, throttled in production.)
     HashAttempt { thread_id: u32, nonce: u64 },
     /// Periodic hashrate update.
-    Hashrate { thread_id: u32, hashes_per_sec: f64, total_hashes: u64 },
+    Hashrate {
+        thread_id: u32,
+        hashes_per_sec: f64,
+        total_hashes: u64,
+    },
     /// A share that meets the pool target was found.
-    ShareFound { thread_id: u32, nonce: u64, hash_hex: String },
+    ShareFound {
+        thread_id: u32,
+        nonce: u64,
+        hash_hex: String,
+    },
     /// Engine stopped (clean or with error).
     Stopped { thread_id: u32, reason: String },
     /// Background thread panicked.
@@ -156,13 +170,18 @@ impl MiningEngine {
     /// # Errors
     /// Returns an error if Argon2id parameters are out of bounds.
     pub fn new(config: MiningConfig) -> Result<Self> {
-        let params = Params::new(config.memory_kib, config.iterations, config.parallelism, Some(POW_OUTPUT_LEN))
-            .map_err(|e| anyhow::anyhow!("invalid Argon2id parameters: {e}"))?;
+        let params = Params::new(
+            config.memory_kib,
+            config.iterations,
+            config.parallelism,
+            Some(POW_OUTPUT_LEN),
+        )
+        .map_err(|e| anyhow::anyhow!("invalid Argon2id parameters: {e}"))?;
         let argon = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
         Ok(Self { config, argon })
     }
 
-    /// Hash one (header_base, nonce) pair under Argon2id.
+    /// Hash one (`header_base`, nonce) pair under Argon2id.
     ///
     /// The salt is the first 16 bytes of the header base; the password is the
     /// full header with the nonce appended. This matches seine's behavior:
@@ -218,7 +237,7 @@ impl MiningEngine {
             let event_tx = event_tx.clone();
             let stop = Arc::clone(&stop);
             let engine_self = self.clone_for_thread();
-            let nonce_seed = self.config.nonce_seed.wrapping_add(thread_id as u64);
+            let nonce_seed = self.config.nonce_seed.wrapping_add(u64::from(thread_id));
 
             let handle = tokio::spawn(async move {
                 let _ = event_tx.send(MiningEvent::Started {
@@ -243,15 +262,12 @@ impl MiningEngine {
                     // Lock the shared receiver just long enough to take one work item.
                     let work = {
                         let mut guard = work_rx.lock().await;
-                        match guard.recv().await {
-                            Some(w) => w,
-                            None => {
-                                let _ = event_tx.send(MiningEvent::Stopped {
-                                    thread_id,
-                                    reason: "work channel closed".into(),
-                                });
-                                return;
-                            }
+                        if let Some(w) = guard.recv().await { w } else {
+                            let _ = event_tx.send(MiningEvent::Stopped {
+                                thread_id,
+                                reason: "work channel closed".into(),
+                            });
+                            return;
                         }
                     };
                     let work = work.lock().await;
@@ -307,11 +323,17 @@ impl MiningEngine {
     fn clone_for_thread(&self) -> Self {
         Self {
             config: self.config.clone(),
-            argon: Argon2::new(Algorithm::Argon2id, Version::V0x13, self.argon.params().clone()),
+            argon: Argon2::new(
+                Algorithm::Argon2id,
+                Version::V0x13,
+                self.argon.params().clone(),
+            ),
         }
     }
 
     /// Get the current configuration.
     #[must_use]
-    pub fn config(&self) -> &MiningConfig { &self.config }
+    pub fn config(&self) -> &MiningConfig {
+        &self.config
+    }
 }
