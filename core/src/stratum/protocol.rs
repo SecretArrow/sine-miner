@@ -22,6 +22,7 @@ pub struct LoginParams {
 }
 
 impl LoginRequest {
+    #[must_use]
     pub fn new(id: u64, worker: &str, password: &str, capabilities: Vec<String>) -> Self {
         Self {
             id,
@@ -91,6 +92,7 @@ pub struct SubmitParams {
 }
 
 impl SubmitRequest {
+    #[must_use]
     pub fn new(id: u64, worker: &str, job_id: &str, nonce: u64, hash_hex: &str) -> Self {
         Self {
             id,
@@ -126,7 +128,10 @@ pub enum PoolNotification {
     /// Pool found a block, switch work.
     PoolBlockSolved,
     /// Difficulty update.
-    DifficultyUpdate { new_difficulty: f64, new_target_hex: String },
+    DifficultyUpdate {
+        new_difficulty: f64,
+        new_target_hex: String,
+    },
     /// Share was accepted.
     ShareAccepted,
     /// Share was rejected.

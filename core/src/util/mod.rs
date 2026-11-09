@@ -2,4 +2,4 @@
 
 pub mod hex;
 
-pub use hex::{encode, decode};
+pub use hex::{decode, encode};

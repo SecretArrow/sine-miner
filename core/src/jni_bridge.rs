@@ -11,14 +11,12 @@
 use std::ffi::CString;
 use std::sync::OnceLock;
 
-use jni::JNIEnv;
-use jni::objects::{
-    JByteArray, JClass, JString, JValue, JObject, GlobalRef,
-};
-use jni::sys::{jbyte, jbyteArray, jdouble, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
+use jni::objects::{GlobalRef, JByteArray, JClass, JObject, JString, JValue};
 use jni::strings::JNIString;
+use jni::sys::{jbyte, jbyteArray, jdouble, jint, jlong, jobject, jstring, JNI_FALSE, JNI_TRUE};
+use jni::JNIEnv;
 
-use crate::wallet::{Wallet, WalletConfig, Mnemonic, WordCount};
+use crate::wallet::{Mnemonic, Wallet, WalletConfig, WordCount};
 
 /// Initialize logger once.
 static LOG_INIT: OnceLock<()> = OnceLock::new();
@@ -36,13 +34,17 @@ fn to_jstring<'local>(env: &mut JNIEnv<'local>, s: &str) -> JString<'local> {
         Ok(jstr) => jstr,
         Err(_) => {
             // Fallback: empty string
-            env.new_string("").unwrap_or_else(|_| unsafe { std::mem::zeroed() })
+            env.new_string("")
+                .unwrap_or_else(|_| unsafe { std::mem::zeroed() })
         }
     }
 }
 
 /// Helper to return an error result as a Java String (or null).
-fn error_to_jstring<'local>(env: &mut JNIEnv<'local>, e: &dyn std::error::Error) -> JString<'local> {
+fn error_to_jstring<'local>(
+    env: &mut JNIEnv<'local>,
+    e: &dyn std::error::Error,
+) -> JString<'local> {
     to_jstring(env, &e.to_string())
 }
 
@@ -63,7 +65,9 @@ fn throw_runtime<'local>(env: &mut JNIEnv<'local>, msg: &str) {
 /// ```
 /// Returns `String[2] = {mnemonic_phrase, address}` or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_createWallet<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_createWallet<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -106,11 +110,7 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_c
             let phrase = mnemonic.to_phrase();
             let address = wallet.address_string();
 
-            let arr = match env.new_object_array(
-                2,
-                "java/lang/String",
-                JObject::null(),
-            ) {
+            let arr = match env.new_object_array(2, "java/lang/String", JObject::null()) {
                 Ok(a) => a,
                 Err(e) => {
                     throw_runtime(&mut env, &e.to_string());
@@ -153,7 +153,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_c
 /// ```
 /// Returns the address or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_importWallet<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_importWallet<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -164,9 +166,18 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_i
     init_logger_once();
 
     let label: String = env.get_string(&label).map(Into::into).unwrap_or_default();
-    let mnemonic: String = env.get_string(&mnemonic).map(Into::into).unwrap_or_default();
-    let passphrase: String = env.get_string(&passphrase).map(Into::into).unwrap_or_default();
-    let network_id: String = env.get_string(&network_id).map(Into::into).unwrap_or_default();
+    let mnemonic: String = env
+        .get_string(&mnemonic)
+        .map(Into::into)
+        .unwrap_or_default();
+    let passphrase: String = env
+        .get_string(&passphrase)
+        .map(Into::into)
+        .unwrap_or_default();
+    let network_id: String = env
+        .get_string(&network_id)
+        .map(Into::into)
+        .unwrap_or_default();
 
     let config = WalletConfig {
         network_id,
@@ -196,7 +207,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_i
 /// public static native boolean validateAddress(String address);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_validateAddress<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_validateAddress<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     address: JString<'local>,
@@ -219,7 +232,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_v
 /// ```
 /// Returns the encrypted keystore JSON or throws.
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_encryptWallet<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_encryptWallet<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     label: JString<'local>,
@@ -231,21 +246,40 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_e
     init_logger_once();
 
     let label: String = env.get_string(&label).map(Into::into).unwrap_or_default();
-    let mnemonic: String = env.get_string(&mnemonic).map(Into::into).unwrap_or_default();
-    let passphrase: String = env.get_string(&passphrase).map(Into::into).unwrap_or_default();
-    let password: String = env.get_string(&password).map(Into::into).unwrap_or_default();
-    let network_id: String = env.get_string(&network_id).map(Into::into).unwrap_or_default();
+    let mnemonic: String = env
+        .get_string(&mnemonic)
+        .map(Into::into)
+        .unwrap_or_default();
+    let passphrase: String = env
+        .get_string(&passphrase)
+        .map(Into::into)
+        .unwrap_or_default();
+    let password: String = env
+        .get_string(&password)
+        .map(Into::into)
+        .unwrap_or_default();
+    let network_id: String = env
+        .get_string(&network_id)
+        .map(Into::into)
+        .unwrap_or_default();
 
-    let config = WalletConfig { network_id, ..Default::default() };
+    let config = WalletConfig {
+        network_id,
+        ..Default::default()
+    };
 
     let result: Result<String, String> = (|| {
-        let wallet = Wallet::import(&label, &mnemonic, &passphrase, config).map_err(|e| e.to_string())?;
+        let wallet =
+            Wallet::import(&label, &mnemonic, &passphrase, config).map_err(|e| e.to_string())?;
         let encrypted = wallet.encrypt(&password).map_err(|e| e.to_string())?;
         encrypted.to_json().map_err(|e| e.to_string())
     })();
 
     match result {
-        Ok(json) => env.new_string(&json).map(|s| s.into_raw()).unwrap_or(std::ptr::null_mut()),
+        Ok(json) => env
+            .new_string(&json)
+            .map(|s| s.into_raw())
+            .unwrap_or(std::ptr::null_mut()),
         Err(e) => {
             throw_runtime(&mut env, &e);
             std::ptr::null_mut()
@@ -264,7 +298,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_e
 /// public static native long startMining(int memoryKib, int threads, long nonceSeed);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_startMining<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_startMining<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     memory_kib: jint,
@@ -296,7 +332,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_s
 /// public static native void stopMining(long handle);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_stopMining<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_stopMining<
+    'local,
+>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
     handle: jlong,
@@ -336,15 +374,13 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_h
         }
     };
     match engine.hash_once(&header_vec, nonce as u64) {
-        Ok(result) => {
-            match env.byte_array_from_slice(&result.hash) {
-                Ok(arr) => arr.into_raw(),
-                Err(e) => {
-                    throw_runtime(&mut env, &e.to_string());
-                    std::ptr::null_mut()
-                }
+        Ok(result) => match env.byte_array_from_slice(&result.hash) {
+            Ok(arr) => arr.into_raw(),
+            Err(e) => {
+                throw_runtime(&mut env, &e.to_string());
+                std::ptr::null_mut()
             }
-        }
+        },
         Err(e) => {
             throw_runtime(&mut env, &e.to_string());
             std::ptr::null_mut()
@@ -359,7 +395,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_h
 /// public static native boolean meetsTarget(byte[] hash, byte[] target);
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_meetsTarget<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_meetsTarget<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     hash: JByteArray<'local>,
@@ -390,7 +428,9 @@ pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_m
 /// public static native String coreVersion();
 /// ```
 #[no_mangle]
-pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_coreVersion<'local>(
+pub extern "system" fn Java_com_secretarrow_sineminer_core_native_NativeBridge_coreVersion<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jstring {
